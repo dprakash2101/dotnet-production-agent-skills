@@ -343,6 +343,8 @@ GitHub Actions publishes the package from [`.github/workflows/publish-npm.yml`](
    - **Workflow dispatch**: choose `patch` / `minor` / `major` / `prerelease`, optionally override the npm dist-tag, and optionally commit/tag the bump back to the branch before publish.
 3. Dist-tags default from the version (`latest` for stable, `beta` / `next` / `alpha` / `rc` for matching prereleases) unless you override them on dispatch.
 
+Successful publishes are recorded under the repository **npm** environment (Deployments on the GitHub repo page) and link to the published package version on npmjs.com.
+
 The workflow runs version resolution, an npm uniqueness check, and `npm run validate` before `npm publish --access public --provenance`.
 
 ---
