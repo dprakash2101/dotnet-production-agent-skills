@@ -1,6 +1,6 @@
 {
   "name": "dotnet-production-agent-skills",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Portable production .NET engineering skills for coding agents",
   "license": "MIT",
   "author": {
@@ -17,7 +17,7 @@
   },
   "type": "module",
   "bin": {
-    "dotnet-agent-skills": "dist/src/cli.js"
+    "dotnet-production-agent-skills": "dist/src/cli.js"
   },
   "files": [
     "dist/src",
