@@ -333,6 +333,18 @@ Commands:
 
 ---
 
+## Publishing to npm
+
+GitHub Actions publishes the package from [`.github/workflows/publish-npm.yml`](.github/workflows/publish-npm.yml).
+
+1. Add repository secret `NPM_TOKEN` with an npm automation token that can publish `dotnet-production-agent-skills`.
+2. Bump `version` in `package.json` on `main` when you intend to release.
+3. Publish by creating a GitHub Release, or run **Publish to npm** via workflow dispatch (optional dist-tag: `latest`, `next`, or `beta`).
+
+The workflow runs `npm run validate` before `npm publish --access public --provenance`.
+
+---
+
 ## Validation & Development
 
 Verify all canonical skills against the Agent Skills specification and run the automated test suite:
