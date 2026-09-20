@@ -313,9 +313,12 @@ Commands:
 | `cursor` | `~/.cursor/skills` | `<project>/.cursor/skills` |
 | `all` | `~/.agents/skills` + `~/.claude/skills` | `<project>/.agents/skills` + `<project>/.claude/skills` |
 
+Project-scope `--target copilot` or `--target all` also installs a thin always-on file at `<project>/.github/copilot-instructions.md` (from `global-instructions/AGENTS.md`). Skill bodies stay on-demand; this file only holds guardrails and skill-name routing pointers.
+
 ### Safety & Conflict Handling
 
 - **State Manifest**: Managed installations are tracked in `.dotnet-agent-skills.json` with cryptographic content digests.
+- **Always-on Instructions Manifest**: Managed Copilot instructions are tracked in `.github/.dotnet-agent-skills-instructions.json`.
 - **Conflict Protection**: If a destination file was manually modified or belongs to another tool, the CLI aborts and refuses to overwrite.
 - **Safe Backups**: When `--force` is authorized, conflicting skills are backed up to timestamped archives before replacement.
 - **Surgical Uninstallation**: `uninstall` only removes files explicitly tracked by the manifest, leaving custom user skills untouched.
@@ -327,7 +330,7 @@ Commands:
 | Agent Platform | Native Specification | Adapter Support | Operational Notes |
 | :--- | :--- | :--- | :--- |
 | **OpenAI Codex** | Portable `SKILL.md` in `.agents/skills` | Direct copy or symlink into `.agents/skills` | Follows native discovery paths for user & project scopes. |
-| **GitHub Copilot** | `.github/skills`, `.agents/skills` | Installs to `.github/skills` (project) or `.copilot/skills` (user) | Surface capabilities vary across VS Code, Visual Studio, and JetBrains. |
+| **GitHub Copilot** | `.github/skills`, `.agents/skills` | Installs to `.github/skills` (project) or `.copilot/skills` (user) | Project installs also write thin `.github/copilot-instructions.md`. Surface capabilities vary across VS Code, Visual Studio, and JetBrains. |
 | **Claude Code** | Portable `SKILL.md` in `.claude/skills` | Direct copy or symlink into `.claude/skills` | Supports project & user scopes. Committed project skills recommended for team consistency. |
 | **Cursor** | `.cursor/skills` and `.agents/skills` | Installs to `.cursor/skills` or shared `.agents/skills` | Auto-detects compatible `.agents/skills` layouts. |
 

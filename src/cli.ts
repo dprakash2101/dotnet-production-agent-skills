@@ -66,8 +66,39 @@ interface State {
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SKILLS_ROOT = path.join(PACKAGE_ROOT, "skills");
+const GLOBAL_INSTRUCTIONS_SOURCE = path.join(PACKAGE_ROOT, "global-instructions", "AGENTS.md");
+const COPILOT_INSTRUCTIONS_RELATIVE = path.join(".github", "copilot-instructions.md");
+const COPILOT_INSTRUCTIONS_MANIFEST = ".dotnet-agent-skills-instructions.json";
 const MANIFEST_NAME = ".dotnet-agent-skills.json";
 const SUPPORTED_TARGETS = new Set<Target>(["all", "shared", "codex", "copilot", "claude", "cursor"]);
+
+interface InstructionsManifest {
+  schemaVersion: 1;
+  digest: string;
+  packageVersion: string | null;
+}
+
+interface InstructionsState {
+  path: string;
+  state: InstallationState;
+  managed: boolean;
+}
+
+function wantsCopilotInstructions(target: Target): boolean {
+  return target === "copilot" || target === "all";
+}
+
+function copilotInstructionsPath(projectRoot: string): string {
+  return path.join(projectRoot, COPILOT_INSTRUCTIONS_RELATIVE);
+}
+
+function copilotInstructionsManifestPath(projectRoot: string): string {
+  return path.join(projectRoot, ".github", COPILOT_INSTRUCTIONS_MANIFEST);
+}
+
+function digestText(contents: string): string {
+  return createHash("sha256").update(contents).digest("hex");
+}
 
 function usage(): string {
   return `Usage: dotnet-agent-skills <command> [options]
@@ -91,7 +122,11 @@ Options:
   -h, --help                                         Show help
 
 For --target all, one shared .agents/skills installation serves Codex, Copilot,
-and Cursor; a second .claude/skills installation serves Claude Code.`;
+and Cursor; a second .claude/skills installation serves Claude Code.
+
+Project-scope --target copilot|all also installs a thin always-on file at
+.github/copilot-instructions.md from global-instructions/AGENTS.md (skill
+bodies stay on-demand).`;
 }
 
 function requireValue(argv: readonly string[], index: number, option: string): string {
@@ -235,6 +270,97 @@ async function writeManifest(directory: string, manifest: InstallManifest, dryRu
   await writeFile(path.join(directory, MANIFEST_NAME), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 }
 
+async function readInstructionsManifest(projectRoot: string): Promise<InstructionsManifest | null> {
+  try {
+    const manifest = JSON.parse(
+      await readFile(copilotInstructionsManifestPath(projectRoot), "utf8"),
+    ) as InstructionsManifest;
+    if (manifest.schemaVersion !== 1 || typeof manifest.digest !== "string" || !manifest.digest) {
+      throw new Error("unsupported or malformed instructions manifest");
+    }
+    return manifest;
+  } catch (error) {
+    if (isMissing(error)) return null;
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`invalid ${copilotInstructionsManifestPath(projectRoot)}: ${detail}`);
+  }
+}
+
+async function currentInstructionsState(projectRoot: string): Promise<InstructionsState> {
+  const instructionsPath = copilotInstructionsPath(projectRoot);
+  const kind = await pathKind(instructionsPath);
+  const managed = await readInstructionsManifest(projectRoot);
+  if (kind === "missing") {
+    return { path: instructionsPath, state: "missing", managed: managed !== null };
+  }
+  if (kind !== "file") {
+    return { path: instructionsPath, state: "modified", managed: managed !== null };
+  }
+  const digest = digestText(await readFile(instructionsPath, "utf8"));
+  if (!managed) return { path: instructionsPath, state: "unmanaged", managed: false };
+  return {
+    path: instructionsPath,
+    state: digest === managed.digest ? "unchanged" : "modified",
+    managed: true,
+  };
+}
+
+async function installCopilotInstructions(
+  options: Options,
+  packageVersion: string,
+  state: InstructionsState,
+  action: "install" | "replace" | "conflict",
+): Promise<void> {
+  const sourceContents = await readFile(GLOBAL_INSTRUCTIONS_SOURCE, "utf8");
+  const sourceDigest = digestText(sourceContents);
+
+  console.log(`${options.dryRun ? `would ${action === "install" ? "install" : "replace"}` : action === "install" ? "install" : "replace"}  ${state.path}`);
+  if (options.dryRun) return;
+
+  if (action === "conflict") {
+    const backup = await moveToBackup(
+      path.join(options.project, ".github"),
+      "copilot-instructions.md",
+      state.path,
+    );
+    console.log(`backup     ${backup}`);
+  }
+
+  await mkdir(path.dirname(state.path), { recursive: true });
+  await writeFile(state.path, sourceContents, "utf8");
+  await writeFile(
+    copilotInstructionsManifestPath(options.project),
+    `${JSON.stringify({ schemaVersion: 1, digest: sourceDigest, packageVersion } satisfies InstructionsManifest, null, 2)}\n`,
+    "utf8",
+  );
+}
+
+async function uninstallCopilotInstructions(options: Options, state: InstructionsState): Promise<void> {
+  const manifestPath = copilotInstructionsManifestPath(options.project);
+  const hasManifest = await pathKind(manifestPath) !== "missing";
+
+  if (state.state !== "missing") {
+    console.log(`${options.dryRun ? "would remove" : "remove"}   ${state.path}`);
+    if (!options.dryRun) {
+      if (state.state === "modified" || state.state === "unmanaged") {
+        const backup = await moveToBackup(
+          path.join(options.project, ".github"),
+          "copilot-instructions.md",
+          state.path,
+        );
+        console.log(`backup     ${backup}`);
+      } else {
+        await rm(state.path, { force: true });
+      }
+    }
+  }
+
+  if (hasManifest) {
+    console.log(`${options.dryRun ? "would remove" : "remove"}   ${manifestPath}`);
+    if (!options.dryRun) await rm(manifestPath, { force: true });
+  }
+}
+
 async function currentState(destination: string, name: string, record?: SkillRecord): Promise<State> {
   const installedPath = path.join(destination, name);
   const kind = await pathKind(installedPath);
@@ -299,10 +425,25 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
     destinationPlans.push({ destination, manifest, skills: plans, retirements });
   }
 
-  const conflicts = destinationPlans.flatMap((plan) => [
-    ...plan.skills.filter((skill) => skill.action === "conflict"),
-    ...plan.retirements.filter((retirement) => retirement.state.state === "modified"),
-  ]);
+  const instructionsEnabled = options.scope === "project" && wantsCopilotInstructions(options.target);
+  const instructionsState = instructionsEnabled ? await currentInstructionsState(options.project) : null;
+  const instructionsAction = instructionsState
+    ? instructionsState.state === "missing"
+      ? "install" as const
+      : instructionsState.state === "unchanged"
+        ? "replace" as const
+        : "conflict" as const
+    : null;
+
+  const conflicts = [
+    ...destinationPlans.flatMap((plan) => [
+      ...plan.skills.filter((skill) => skill.action === "conflict"),
+      ...plan.retirements.filter((retirement) => retirement.state.state === "modified"),
+    ]),
+    ...(instructionsAction === "conflict" && instructionsState
+      ? [{ state: { installedPath: instructionsState.path } }]
+      : []),
+  ];
   if (conflicts.length > 0 && !options.force) {
     conflicts.forEach((plan) => console.error(`conflict   ${plan.state.installedPath}`));
     throw new Error("existing or locally modified skills were not overwritten; review them or use --force");
@@ -357,6 +498,10 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
     manifest.target = destination.target;
     await writeManifest(destination.directory, manifest, options.dryRun);
   }
+
+  if (instructionsState && instructionsAction) {
+    await installCopilotInstructions(options, packageJson.version, instructionsState, instructionsAction);
+  }
 }
 
 async function uninstall(options: Options): Promise<void> {
@@ -377,14 +522,27 @@ async function uninstall(options: Options): Promise<void> {
     destinationPlans.push({ destination, manifest, skills: plans });
   }
 
-  const conflicts = destinationPlans.flatMap((plan) =>
-    plan.skills.filter((skill) => skill.state.state === "modified"),
-  );
+  const instructionsEnabled = options.scope === "project" && wantsCopilotInstructions(options.target);
+  const instructionsState = instructionsEnabled ? await currentInstructionsState(options.project) : null;
+  const instructionsManifestKind = instructionsEnabled
+    ? await pathKind(copilotInstructionsManifestPath(options.project))
+    : "missing";
+  const hasInstructionsWork = instructionsState !== null
+    && (instructionsState.state !== "missing" || instructionsManifestKind !== "missing");
+
+  const conflicts = [
+    ...destinationPlans.flatMap((plan) =>
+      plan.skills.filter((skill) => skill.state.state === "modified").map((skill) => skill.state.installedPath),
+    ),
+    ...(instructionsState && (instructionsState.state === "modified" || instructionsState.state === "unmanaged")
+      ? [instructionsState.path]
+      : []),
+  ];
   if (conflicts.length > 0 && !options.force) {
-    conflicts.forEach((plan) => console.error(`modified   ${plan.state.installedPath}`));
+    conflicts.forEach((conflictPath) => console.error(`modified   ${conflictPath}`));
     throw new Error("locally modified managed skills were not removed; use --force after review");
   }
-  await confirmForce(conflicts, options);
+  await confirmForce(conflicts.map((conflictPath) => ({ path: conflictPath })), options);
 
   for (const { destination, manifest, skills: plans } of destinationPlans) {
     for (const plan of plans) {
@@ -398,11 +556,16 @@ async function uninstall(options: Options): Promise<void> {
       else await writeManifest(destination.directory, manifest, false);
     }
   }
+
+  if (hasInstructionsWork && instructionsState) {
+    await uninstallCopilotInstructions(options, instructionsState);
+  }
 }
 
 async function inspect(options: Options): Promise<{
   packagedSkills: string[];
   installations: (Destination & { packageVersion: string | null; skills: { name: string; state: InspectionState; mode: InstallMode | null }[] })[];
+  copilotInstructions: InstructionsState | null;
 }> {
   const skills = await packagedSkills();
   const packaged = new Set(skills);
@@ -419,11 +582,17 @@ async function inspect(options: Options): Promise<{
     }
     installations.push({ ...destination, packageVersion: manifest.packageVersion, skills: states });
   }
-  return { packagedSkills: skills, installations };
+  const copilotInstructions = options.scope === "project" && wantsCopilotInstructions(options.target)
+    ? await currentInstructionsState(options.project)
+    : null;
+  return { packagedSkills: skills, installations, copilotInstructions };
 }
 
 async function validateCanonical(): Promise<string[]> {
   const errors: string[] = [];
+  if (!existsSync(GLOBAL_INSTRUCTIONS_SOURCE)) {
+    errors.push("global-instructions/AGENTS.md: missing always-on instructions source");
+  }
   for (const name of await packagedSkills()) {
     const skillFile = path.join(SKILLS_ROOT, name, "SKILL.md");
     if (!existsSync(skillFile)) {
@@ -471,9 +640,15 @@ async function main(): Promise<void> {
     else {
       const report = await inspect(parsed.options);
       const validationErrors = command === "doctor" ? await validateCanonical() : [];
-      const unhealthy = report.installations.flatMap((entry) => entry.skills)
+      const unhealthySkills = report.installations.flatMap((entry) => entry.skills)
         .filter((entry) => entry.state !== "unchanged");
-      const output = { ...report, validationErrors, healthy: validationErrors.length === 0 && unhealthy.length === 0 };
+      const unhealthyInstructions = report.copilotInstructions !== null
+        && report.copilotInstructions.state !== "unchanged";
+      const output = {
+        ...report,
+        validationErrors,
+        healthy: validationErrors.length === 0 && unhealthySkills.length === 0 && !unhealthyInstructions,
+      };
       if (parsed.options.json) console.log(JSON.stringify(output, null, 2));
       else {
         console.log(`Packaged skills (${report.packagedSkills.length}): ${report.packagedSkills.join(", ")}`);
@@ -481,6 +656,9 @@ async function main(): Promise<void> {
           const summary = Object.entries(countStates(installation.skills))
             .map(([key, value]) => `${key}=${value}`).join(" ");
           console.log(`${installation.target.padEnd(7)} ${installation.directory} ${summary}`);
+        }
+        if (report.copilotInstructions) {
+          console.log(`instr   ${report.copilotInstructions.path} ${report.copilotInstructions.state}`);
         }
         validationErrors.forEach((error) => console.error(`error: ${error}`));
       }

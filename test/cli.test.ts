@@ -148,7 +148,65 @@ test("an explicit project path equal to cwd still uses project scope and target 
     await readFile(path.join(project, ".github", "skills", "code-quality", "SKILL.md"), "utf8"),
     /name: code-quality/,
   );
+  assert.match(
+    await readFile(path.join(project, ".github", "copilot-instructions.md"), "utf8"),
+    /Skill routing/,
+  );
   await assert.rejects(readFile(path.join(home, ".copilot", "skills", "code-quality", "SKILL.md"), "utf8"), { code: "ENOENT" });
+});
+
+test("project all install writes thin Copilot instructions without skill bodies", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-skills-all-instr-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "dotnet-agent-skills-all-instr-"));
+  const result = runAt(home, project, "install", "--target", "all", "--project", project);
+  assert.equal(result.status, 0, result.stderr);
+
+  const instructions = await readFile(path.join(project, ".github", "copilot-instructions.md"), "utf8");
+  assert.match(instructions, /task-router/);
+  assert.match(instructions, /dotnet-implementation/);
+  assert.doesNotMatch(instructions, /name: task-router/);
+  assert.doesNotMatch(instructions, /# Task router/);
+
+  const doctor = runAt(home, project, "doctor", "--target", "all", "--project", project, "--json");
+  assert.equal(doctor.status, 0, doctor.stderr);
+  const output = JSON.parse(doctor.stdout) as {
+    healthy: boolean;
+    copilotInstructions: { state: string; path: string };
+  };
+  assert.equal(output.healthy, true);
+  assert.equal(output.copilotInstructions.state, "unchanged");
+});
+
+test("user-scope install does not write project Copilot instructions", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-skills-user-instr-"));
+  assert.equal(run(home, "install", "--target", "all").status, 0);
+  await assert.rejects(readFile(path.join(home, ".github", "copilot-instructions.md"), "utf8"), { code: "ENOENT" });
+});
+
+test("Copilot instructions conflict protection and forced uninstall", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-skills-instr-conflict-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "dotnet-agent-skills-instr-conflict-"));
+  assert.equal(runAt(home, project, "install", "--target", "copilot", "--project", project).status, 0);
+
+  const instructionsPath = path.join(project, ".github", "copilot-instructions.md");
+  await writeFile(instructionsPath, "locally edited instructions\n", "utf8");
+
+  const refused = runAt(home, project, "update", "--target", "copilot", "--project", project);
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /not overwritten/);
+  assert.equal(await readFile(instructionsPath, "utf8"), "locally edited instructions\n");
+
+  const uninstallRefused = runAt(home, project, "uninstall", "--target", "copilot", "--project", project);
+  assert.equal(uninstallRefused.status, 1);
+  assert.match(uninstallRefused.stderr, /not removed/);
+
+  const forced = runAt(home, project, "uninstall", "--target", "copilot", "--project", project, "--force", "--yes");
+  assert.equal(forced.status, 0, forced.stderr);
+  await assert.rejects(readFile(instructionsPath, "utf8"), { code: "ENOENT" });
+  await assert.rejects(
+    readFile(path.join(project, ".github", ".dotnet-agent-skills-instructions.json"), "utf8"),
+    { code: "ENOENT" },
+  );
 });
 
 test("help works globally and after a command without creating an installation", async () => {

@@ -6,4 +6,11 @@
 - After a coherent change, review the complete diff and run proportionate targeted validation. Preserve pre-existing user changes.
 - Do not commit, push, change credentials/tool configuration, or perform destructive operations without authorization.
 
-Load focused Agent Skills for detailed workflows; do not duplicate their full instructions here.
+## Skill routing
+
+Load focused Agent Skills by name; do not paste their full bodies into context.
+
+- Start ambiguous work with `task-router`.
+- Default code changes: `dotnet-implementation`; close with `diff-review` and `targeted-validation`.
+- New major work: `dotnet-architecture`. New customer APIs: `aspnet-core-api-development`, `api-contract-safety`, `exception-handling`.
+- Load cloud, database, security, or logging skills only when that subject is in scope. Never preload the full catalog.
