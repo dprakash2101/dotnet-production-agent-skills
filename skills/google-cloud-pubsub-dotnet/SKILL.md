@@ -7,6 +7,8 @@ description: Implement or review Google Cloud Pub/Sub publishers and pull subscr
 
 Follow the repository's integration abstractions and the installed `Google.Cloud.PubSub.V1` version. Use `PublisherClient`/`SubscriberClient` for continuous high-throughput processing and lower-level service clients only when the hosting model or required control justifies them. Reuse expensive clients at the appropriate lifetime.
 
+Bind project, topic, subscription, emulator, flow-control, and shutdown settings through the repository's configuration pattern. Validate required names and operational bounds at startup where practical; do not silently fall back to a production resource or accept unbounded defaults because configuration is missing.
+
 Assume messages can be delivered more than once. Make handlers idempotent where repeated side effects matter, using a stable message/business key and durable deduplication when required. Do not rely on an in-memory flag across instances.
 
 ## Publishers

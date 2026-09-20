@@ -267,10 +267,18 @@ async function moveToBackup(destination: string, name: string, target: string): 
   return backup;
 }
 
+interface InstallPlan {
+  destination: Destination;
+  manifest: InstallManifest;
+  skills: { name: string; state: State; action: "install" | "replace" | "conflict" }[];
+  retirements: { name: string; state: State }[];
+}
+
 async function installOrUpdate(options: Options, command: "install" | "update"): Promise<void> {
   const skills = await packagedSkills();
   const packaged = new Set(skills);
   const packageJson = JSON.parse(await readFile(path.join(PACKAGE_ROOT, "package.json"), "utf8")) as { version: string };
+  const destinationPlans: InstallPlan[] = [];
 
   for (const destination of destinations(options)) {
     const manifest = await readManifest(destination.directory);
@@ -288,15 +296,20 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
       }
     }
 
-    const conflicts = [
-      ...plans.filter((plan) => plan.action === "conflict"),
-      ...retirements.filter((plan) => plan.state.state === "modified"),
-    ];
-    if (conflicts.length > 0 && !options.force) {
-      conflicts.forEach((plan) => console.error(`conflict   ${plan.state.installedPath}`));
-      throw new Error("existing or locally modified skills were not overwritten; review them or use --force");
-    }
-    await confirmForce(conflicts, options);
+    destinationPlans.push({ destination, manifest, skills: plans, retirements });
+  }
+
+  const conflicts = destinationPlans.flatMap((plan) => [
+    ...plan.skills.filter((skill) => skill.action === "conflict"),
+    ...plan.retirements.filter((retirement) => retirement.state.state === "modified"),
+  ]);
+  if (conflicts.length > 0 && !options.force) {
+    conflicts.forEach((plan) => console.error(`conflict   ${plan.state.installedPath}`));
+    throw new Error("existing or locally modified skills were not overwritten; review them or use --force");
+  }
+  await confirmForce(conflicts, options);
+
+  for (const { destination, manifest, skills: plans, retirements } of destinationPlans) {
     if (!options.dryRun) await mkdir(destination.directory, { recursive: true });
 
     for (const plan of plans) {
@@ -347,6 +360,12 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
 }
 
 async function uninstall(options: Options): Promise<void> {
+  const destinationPlans: {
+    destination: Destination;
+    manifest: InstallManifest;
+    skills: { name: string; state: State }[];
+  }[] = [];
+
   for (const destination of destinations(options)) {
     const manifest = await readManifest(destination.directory);
     const plans: { name: string; state: State }[] = [];
@@ -355,12 +374,19 @@ async function uninstall(options: Options): Promise<void> {
       if (state.state === "missing") delete manifest.skills[name];
       else plans.push({ name, state });
     }
-    const conflicts = plans.filter((plan) => plan.state.state === "modified");
-    if (conflicts.length > 0 && !options.force) {
-      conflicts.forEach((plan) => console.error(`modified   ${plan.state.installedPath}`));
-      throw new Error("locally modified managed skills were not removed; use --force after review");
-    }
-    await confirmForce(conflicts, options);
+    destinationPlans.push({ destination, manifest, skills: plans });
+  }
+
+  const conflicts = destinationPlans.flatMap((plan) =>
+    plan.skills.filter((skill) => skill.state.state === "modified"),
+  );
+  if (conflicts.length > 0 && !options.force) {
+    conflicts.forEach((plan) => console.error(`modified   ${plan.state.installedPath}`));
+    throw new Error("locally modified managed skills were not removed; use --force after review");
+  }
+  await confirmForce(conflicts, options);
+
+  for (const { destination, manifest, skills: plans } of destinationPlans) {
     for (const plan of plans) {
       console.log(`${options.dryRun ? "would remove" : "remove"}   ${plan.state.installedPath}`);
       if (!options.dryRun) await rm(plan.state.installedPath, { recursive: true, force: true });

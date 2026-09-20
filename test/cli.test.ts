@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, readdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -149,4 +149,47 @@ test("an explicit project path equal to cwd still uses project scope and target 
     /name: code-quality/,
   );
   await assert.rejects(readFile(path.join(home, ".copilot", "skills", "code-quality", "SKILL.md"), "utf8"), { code: "ENOENT" });
+});
+
+test("help works globally and after a command without creating an installation", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-skills-help-"));
+  for (const args of [["--help"], ["install", "--help"]]) {
+    const result = run(home, ...args);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Usage: dotnet-agent-skills/);
+  }
+  await assert.rejects(readFile(path.join(home, ".agents", "skills", ".dotnet-agent-skills.json"), "utf8"), {
+    code: "ENOENT",
+  });
+});
+
+test("multi-target update preflights every conflict before changing any target", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-skills-update-preflight-"));
+  assert.equal(run(home, "install", "--target", "all").status, 0);
+
+  const sharedSkill = path.join(home, ".agents", "skills", "code-quality");
+  const claudeSkill = path.join(home, ".claude", "skills", "code-quality", "SKILL.md");
+  await rm(sharedSkill, { recursive: true });
+  await writeFile(claudeSkill, "locally edited\n", "utf8");
+
+  const result = run(home, "update", "--target", "all");
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /not overwritten/);
+  await assert.rejects(readFile(path.join(sharedSkill, "SKILL.md"), "utf8"), { code: "ENOENT" });
+  assert.equal(await readFile(claudeSkill, "utf8"), "locally edited\n");
+});
+
+test("multi-target uninstall preflights every conflict before removing any target", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-skills-uninstall-preflight-"));
+  assert.equal(run(home, "install", "--target", "all").status, 0);
+
+  const sharedSkill = path.join(home, ".agents", "skills", "code-quality", "SKILL.md");
+  const claudeSkill = path.join(home, ".claude", "skills", "code-quality", "SKILL.md");
+  await writeFile(claudeSkill, "locally edited\n", "utf8");
+
+  const result = run(home, "uninstall", "--target", "all");
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /not removed/);
+  assert.match(await readFile(sharedSkill, "utf8"), /name: code-quality/);
+  assert.equal(await readFile(claudeSkill, "utf8"), "locally edited\n");
 });
