@@ -333,6 +333,27 @@ Commands:
 
 ---
 
+## Publishing to npm
+
+GitHub Actions publishes the package from [`.github/workflows/publish-npm.yml`](.github/workflows/publish-npm.yml).
+
+1. Configure repository settings:
+   - Secret `PACKAGE_MANAGER_TOKEN` — npm automation token that can publish `dotnet-production-agent-skills` (used as `NODE_AUTH_TOKEN`)
+   - Variable `RELEASE_GIT_NAME` — git author name for version-bump commits (example: `Devi Prakash`)
+   - Variable `RELEASE_GIT_EMAIL` — git author email for version-bump commits (example: `dprakash2101@gmail.com`)
+2. Choose a versioning path:
+   - **GitHub Release**: create a release whose tag is semver (`v1.2.3` or `1.2.3`). The workflow aligns `package.json` to that version, refuses to republish an existing npm version, validates, then publishes.
+   - **Workflow dispatch**: choose `keep` to publish the current `package.json` version as-is, or `patch` / `minor` / `major` / `prerelease` to bump first. Optionally override the npm dist-tag, and optionally commit/tag changes back to the branch before publish.
+3. Dist-tags default from the version (`latest` for stable, `beta` / `next` / `alpha` / `rc` for matching prereleases) unless you override them on dispatch.
+
+`package.json` is the version source of truth. If `package-lock.json` root version drifts, the workflow aligns the lockfile to `package.json` (or the release tag) without inventing a new semver. `keep` does not bump; it only publishes the current version (after any lock sync). Republishing a version that already exists on npm is still rejected.
+
+Successful publishes are recorded under the repository **npm** environment (Deployments on the GitHub repo page) and link to the published package version on npmjs.com.
+
+The workflow runs version resolution, an npm uniqueness check, and `npm run validate` before `npm publish --access public --provenance`.
+
+---
+
 ## Validation & Development
 
 Verify all canonical skills against the Agent Skills specification and run the automated test suite:

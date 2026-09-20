@@ -1,0 +1,148 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Semver bump, or keep to publish the current package.json version
+        required: true
+        default: keep
+        type: choice
+        options:
+          - keep
+          - patch
+          - minor
+          - major
+          - prerelease
+      prerelease_id:
+        description: Prerelease id when bump is prerelease
+        required: true
+        default: beta
+        type: choice
+        options:
+          - beta
+          - next
+          - alpha
+          - rc
+      tag:
+        description: npm dist-tag override (empty = derive from version)
+        required: false
+        default: ""
+        type: string
+      commit_version:
+        description: Commit and push the bumped version tag back to the branch
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  id-token: write
+  deployments: write
+
+concurrency:
+  group: publish-npm
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+      url: ${{ steps.publish.outputs.package_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve publish version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          BUMP: ${{ inputs.bump }}
+          PREID: ${{ inputs.prerelease_id }}
+          DIST_TAG_INPUT: ${{ inputs.tag }}
+        run: node scripts/prepare-publish-version.mjs
+
+      - name: Ensure version is unpublished
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          PACKAGE="$(node -p "require('./package.json').name")"
+          if npm view "${PACKAGE}@${VERSION}" version >/dev/null 2>&1; then
+            echo "error: ${PACKAGE}@${VERSION} already exists on npm" >&2
+            exit 1
+          fi
+          echo "npm is clear for ${PACKAGE}@${VERSION}"
+
+      - name: Validate skills and CLI
+        run: npm run validate
+
+      - name: Commit version bump
+        if: github.event_name == 'workflow_dispatch' && inputs.commit_version && steps.version.outputs.changed == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUMP: ${{ inputs.bump }}
+          RELEASE_GIT_NAME: ${{ vars.RELEASE_GIT_NAME }}
+          RELEASE_GIT_EMAIL: ${{ vars.RELEASE_GIT_EMAIL }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No version file changes to commit"
+            exit 0
+          fi
+          if [ -z "${RELEASE_GIT_NAME}" ] || [ -z "${RELEASE_GIT_EMAIL}" ]; then
+            echo "error: set repository variables RELEASE_GIT_NAME and RELEASE_GIT_EMAIL" >&2
+            exit 1
+          fi
+          git config user.name "${RELEASE_GIT_NAME}"
+          git config user.email "${RELEASE_GIT_EMAIL}"
+          git add package.json package-lock.json
+          if [ "${BUMP}" = "keep" ]; then
+            git commit -m "chore: sync package-lock version to v${VERSION}"
+          else
+            git commit -m "chore: release v${VERSION}"
+          fi
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "Tag v${VERSION} already exists; leaving it unchanged"
+          else
+            git tag "v${VERSION}"
+            git push origin "v${VERSION}"
+          fi
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Publish to npm
+        id: publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_MANAGER_TOKEN }}
+          DIST_TAG: ${{ steps.version.outputs.dist_tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          PACKAGE="$(node -p "require('./package.json').name")"
+          echo "Publishing ${PACKAGE}@${VERSION} with dist-tag ${DIST_TAG}"
+          npm publish --access public --provenance --tag "$DIST_TAG"
+          PACKAGE_URL="https://www.npmjs.com/package/${PACKAGE}/v/${VERSION}"
+          echo "package_url=${PACKAGE_URL}" >> "$GITHUB_OUTPUT"
+          echo "Published ${PACKAGE_URL}"
