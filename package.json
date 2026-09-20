@@ -1,0 +1,37 @@
+{
+  "name": "dotnet-production-agent-skills",
+  "version": "0.2.0",
+  "description": "Portable production .NET engineering skills for coding agents",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "dotnet-agent-skills": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/test/cli.test.js",
+    "validate": "python3 scripts/validate_skills.py && npm test",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords": [
+    "agent-skills",
+    "dotnet",
+    "codex",
+    "copilot",
+    "claude-code",
+    "cursor"
+  ]
+}

@@ -17,5 +17,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - name: Validate Agent Skills
-        run: python3 scripts/validate_skills.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install CLI development dependencies
+        run: npm ci
+      - name: Validate skills and CLI
+        run: npm run validate
