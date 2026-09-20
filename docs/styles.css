@@ -810,6 +810,7 @@ code {
   border-radius: var(--radius-md);
   background: var(--bg-card);
   padding: 19px;
+  cursor: pointer;
   transition: border-color var(--transition), background-color var(--transition), box-shadow var(--transition);
 }
 
@@ -820,29 +821,52 @@ code {
 }
 
 .card-top {
-  margin-bottom: 16px;
-}
-
-.card-header-row,
-.card-icon-badge,
-.card-footer {
-  display: flex;
-  align-items: center;
+  margin-bottom: 14px;
 }
 
 .card-header-row {
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 12px;
-}
-
-.card-icon-badge {
-  gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .card-icon {
   font-size: 1.2rem;
   line-height: 1;
+  flex: 0 0 auto;
+}
+
+.skill-name {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.98rem;
+  line-height: 1.35;
+  flex: 1 1 auto;
+}
+
+.skill-desc {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.87rem;
+  line-height: 1.62;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 13px;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
 }
 
 .category-tag,
@@ -859,65 +883,19 @@ code {
   padding: 2px 8px;
 }
 
-.skill-name {
-  margin: 0 0 8px;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  line-height: 1.35;
-}
-
-.skill-desc {
-  margin: 0 0 14px;
-  color: var(--text-secondary);
-  font-size: 0.87rem;
-  line-height: 1.62;
-}
-
-.trigger-box {
-  margin-bottom: 14px;
-  border-left: 3px solid var(--accent-primary);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: color-mix(in srgb, var(--accent-soft) 35%, var(--bg-subtle));
-  color: var(--text-secondary);
-  padding: 10px 12px;
-  font-size: 0.79rem;
-  line-height: 1.55;
-}
-
-.trigger-box strong {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--text-primary);
-  font-size: 0.73rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
 .tag-badge {
   padding: 1px 7px;
 }
 
-.card-footer {
-  justify-content: space-between;
-  gap: 12px;
-  border-top: 1px solid var(--border-color);
-  padding-top: 13px;
-}
-
 .ref-indicator {
+  flex: 0 0 auto;
   color: var(--success);
-  font-size: 0.76rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
 .view-btn {
+  flex: 0 0 auto;
   border: 0;
   background: transparent;
   color: var(--accent-primary);
@@ -925,6 +903,7 @@ code {
   font-size: 0.81rem;
   font-weight: 750;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .view-btn:hover {

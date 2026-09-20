@@ -167,37 +167,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     skillsGrid.innerHTML = filtered.map(item => `
-      <article class="skill-card" data-id="${item.id}">
+      <article class="skill-card" data-id="${item.id}" tabindex="0" role="button" aria-label="View ${item.name} skill details">
         <div class="card-top">
           <div class="card-header-row">
-            <div class="card-icon-badge">
-              <span class="card-icon">${item.icon}</span>
-              <span class="category-tag">${item.badge}</span>
-            </div>
-            ${item.hasReferences ? `<span class="ref-indicator" title="Deep reference guide available">📚 Reference</span>` : ""}
+            <span class="card-icon">${item.icon}</span>
+            <h3 class="skill-name">${item.name}</h3>
+            ${item.hasReferences ? `<span class="ref-indicator" title="Has reference docs">📚</span>` : ""}
           </div>
-          <h3 class="skill-name">${item.name}</h3>
           <p class="skill-desc">${item.description}</p>
-          <div class="trigger-box">
-            <strong>When to activate</strong>
-            ${item.whenToUse}
-          </div>
-          <div class="card-tags">
-            ${item.tags.map(tag => `<span class="tag-badge">#${tag}</span>`).join("")}
-          </div>
         </div>
         <div class="card-footer">
-          <span style="font-size: 0.8rem; color: var(--text-muted);">${item.categoryName}</span>
-          <button class="view-btn" type="button" data-id="${item.id}">View skill <span aria-hidden="true">→</span></button>
+          <div class="card-tags">
+            ${item.tags.slice(0, 3).map(tag => `<span class="tag-badge">${tag}</span>`).join("")}
+          </div>
+          <button class="view-btn" type="button" data-id="${item.id}">Details →</button>
         </div>
       </article>
     `).join("");
 
-    // Attach click handlers to View buttons
+    // Click on card or view button opens modal
+    skillsGrid.querySelectorAll(".skill-card").forEach(card => {
+      const openCard = () => openModal(card.getAttribute("data-id"));
+      card.addEventListener("click", (e) => {
+        if (e.target.closest(".view-btn")) return;
+        openCard();
+      });
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCard(); }
+      });
+    });
     skillsGrid.querySelectorAll(".view-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
-        const id = e.currentTarget.getAttribute("data-id");
-        openModal(id);
+        openModal(e.currentTarget.getAttribute("data-id"));
       });
     });
   };
