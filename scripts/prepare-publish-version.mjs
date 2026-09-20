@@ -6,26 +6,36 @@
  * Env:
  *   EVENT_NAME     release | workflow_dispatch | ...
  *   RELEASE_TAG    GitHub release tag (e.g. v1.2.3) when EVENT_NAME=release
- *   BUMP           patch | minor | major | prerelease (workflow_dispatch)
+ *   BUMP           keep | patch | minor | major | prerelease (workflow_dispatch)
  *   PREID          prerelease identifier (default: beta)
- *   GITHUB_OUTPUT  optional; writes version= and dist_tag=
+ *   DIST_TAG_INPUT optional npm dist-tag override
+ *   GITHUB_OUTPUT  optional; writes version=, dist_tag=, changed=
  */
 
 import { spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
 const PACKAGE_JSON = path.resolve("package.json");
+const PACKAGE_LOCK = path.resolve("package-lock.json");
 const SEMVER =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
+function readJson(filePath) {
+  return JSON.parse(readFileSync(filePath, "utf8"));
+}
+
+function writeJson(filePath, value) {
+  writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
 function readPackage() {
-  return JSON.parse(readFileSync(PACKAGE_JSON, "utf8"));
+  return readJson(PACKAGE_JSON);
 }
 
 function writePackage(pkg) {
-  writeFileSync(PACKAGE_JSON, `${JSON.stringify(pkg, null, 2)}\n`, "utf8");
+  writeJson(PACKAGE_JSON, pkg);
 }
 
 function normalizeReleaseTag(tag) {
@@ -49,6 +59,37 @@ function npmVersion(args) {
   return readPackage().version;
 }
 
+/**
+ * package.json is the source of truth. If package-lock.json root / "" package
+ * version drifts, align it to the publish version without a semver bump.
+ */
+function syncLockfile(version) {
+  if (!existsSync(PACKAGE_LOCK)) return false;
+
+  const lock = readJson(PACKAGE_LOCK);
+  let changed = false;
+
+  if (lock.version !== version) {
+    console.log(`Aligning package-lock.json version ${lock.version ?? "(missing)"} -> ${version}`);
+    lock.version = version;
+    changed = true;
+  }
+
+  if (lock.packages && typeof lock.packages === "object") {
+    const root = lock.packages[""];
+    if (root && typeof root === "object" && root.version !== version) {
+      console.log(
+        `Aligning package-lock.json packages[""].version ${root.version ?? "(missing)"} -> ${version}`,
+      );
+      root.version = version;
+      changed = true;
+    }
+  }
+
+  if (changed) writeJson(PACKAGE_LOCK, lock);
+  return changed;
+}
+
 function defaultDistTag(version) {
   const match = version.match(SEMVER);
   const prerelease = match?.[4];
@@ -58,18 +99,23 @@ function defaultDistTag(version) {
   return "next";
 }
 
-function appendOutput(version, distTag) {
+function appendOutput(version, distTag, changed) {
   const output = process.env.GITHUB_OUTPUT;
   if (!output) {
-    console.log(JSON.stringify({ version, dist_tag: distTag }));
+    console.log(JSON.stringify({ version, dist_tag: distTag, changed }));
     return;
   }
-  writeFileSync(output, `version=${version}\ndist_tag=${distTag}\n`, { flag: "a" });
+  writeFileSync(
+    output,
+    `version=${version}\ndist_tag=${distTag}\nchanged=${changed ? "true" : "false"}\n`,
+    { flag: "a" },
+  );
 }
 
 function main() {
   const eventName = process.env.EVENT_NAME ?? "";
   let version;
+  let changed = false;
 
   if (eventName === "release") {
     version = normalizeReleaseTag(process.env.RELEASE_TAG);
@@ -79,28 +125,38 @@ function main() {
       const pkg = readPackage();
       pkg.version = version;
       writePackage(pkg);
-      // Keep package-lock.json in sync when present.
-      spawnSync("npm", ["install", "--package-lock-only", "--ignore-scripts"], {
-        encoding: "utf8",
-        stdio: "inherit",
-      });
+      changed = true;
     } else {
-      console.log(`package.json already at release version ${version}`);
+      console.log(`Keeping package.json version ${version}`);
     }
+    if (syncLockfile(version)) changed = true;
   } else if (eventName === "workflow_dispatch") {
     const bump = (process.env.BUMP ?? "patch").trim();
-    const allowed = new Set(["patch", "minor", "major", "prerelease"]);
+    const allowed = new Set(["keep", "patch", "minor", "major", "prerelease"]);
     if (!allowed.has(bump)) {
       throw new Error(`Unsupported BUMP '${bump}'. Expected: ${[...allowed].join(", ")}`);
     }
-    const before = readPackage().version;
-    if (bump === "prerelease") {
-      const preid = (process.env.PREID ?? "beta").trim() || "beta";
-      version = npmVersion(["prerelease", `--preid=${preid}`]);
+
+    if (bump === "keep") {
+      version = readPackage().version;
+      if (!SEMVER.test(version)) {
+        throw new Error(`package.json version is not valid semver: ${version}`);
+      }
+      console.log(`Keeping current package.json version ${version}`);
+      if (syncLockfile(version)) changed = true;
     } else {
-      version = npmVersion([bump]);
+      const before = readPackage().version;
+      if (bump === "prerelease") {
+        const preid = (process.env.PREID ?? "beta").trim() || "beta";
+        version = npmVersion(["prerelease", `--preid=${preid}`]);
+      } else {
+        version = npmVersion([bump]);
+      }
+      changed = true;
+      console.log(`Bumped package version ${before} -> ${version} (${bump})`);
+      // npm version normally updates the lockfile; still reconcile drift.
+      if (syncLockfile(version)) changed = true;
     }
-    console.log(`Bumped package version ${before} -> ${version} (${bump})`);
   } else {
     throw new Error(`Unsupported EVENT_NAME '${eventName}' for version preparation`);
   }
@@ -111,8 +167,8 @@ function main() {
 
   const requestedTag = (process.env.DIST_TAG_INPUT ?? "").trim();
   const distTag = requestedTag || defaultDistTag(version);
-  appendOutput(version, distTag);
-  console.log(`Publish version=${version} dist_tag=${distTag}`);
+  appendOutput(version, distTag, changed);
+  console.log(`Publish version=${version} dist_tag=${distTag} changed=${changed}`);
 }
 
 try {

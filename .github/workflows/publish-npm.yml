@@ -6,11 +6,12 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: Semver bump to apply before publish
+        description: Semver bump, or keep to publish the current package.json version
         required: true
-        default: patch
+        default: keep
         type: choice
         options:
+          - keep
           - patch
           - minor
           - major
@@ -99,9 +100,10 @@ jobs:
         run: npm run validate
 
       - name: Commit version bump
-        if: github.event_name == 'workflow_dispatch' && inputs.commit_version
+        if: github.event_name == 'workflow_dispatch' && inputs.commit_version && steps.version.outputs.changed == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          BUMP: ${{ inputs.bump }}
           RELEASE_GIT_NAME: ${{ vars.RELEASE_GIT_NAME }}
           RELEASE_GIT_EMAIL: ${{ vars.RELEASE_GIT_EMAIL }}
         run: |
@@ -117,10 +119,18 @@ jobs:
           git config user.name "${RELEASE_GIT_NAME}"
           git config user.email "${RELEASE_GIT_EMAIL}"
           git add package.json package-lock.json
-          git commit -m "chore: release v${VERSION}"
-          git tag "v${VERSION}"
+          if [ "${BUMP}" = "keep" ]; then
+            git commit -m "chore: sync package-lock version to v${VERSION}"
+          else
+            git commit -m "chore: release v${VERSION}"
+          fi
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "Tag v${VERSION} already exists; leaving it unchanged"
+          else
+            git tag "v${VERSION}"
+            git push origin "v${VERSION}"
+          fi
           git push origin "HEAD:${GITHUB_REF_NAME}"
-          git push origin "v${VERSION}"
 
       - name: Publish to npm
         id: publish
