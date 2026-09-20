@@ -102,14 +102,20 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.commit_version
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_GIT_NAME: ${{ vars.RELEASE_GIT_NAME }}
+          RELEASE_GIT_EMAIL: ${{ vars.RELEASE_GIT_EMAIL }}
         run: |
           set -euo pipefail
           if git diff --quiet -- package.json package-lock.json; then
             echo "No version file changes to commit"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -z "${RELEASE_GIT_NAME}" ] || [ -z "${RELEASE_GIT_EMAIL}" ]; then
+            echo "error: set repository variables RELEASE_GIT_NAME and RELEASE_GIT_EMAIL" >&2
+            exit 1
+          fi
+          git config user.name "${RELEASE_GIT_NAME}"
+          git config user.email "${RELEASE_GIT_EMAIL}"
           git add package.json package-lock.json
           git commit -m "chore: release v${VERSION}"
           git tag "v${VERSION}"
@@ -119,7 +125,7 @@ jobs:
       - name: Publish to npm
         id: publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_MANAGER_TOKEN }}
           DIST_TAG: ${{ steps.version.outputs.dist_tag }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
