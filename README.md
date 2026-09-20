@@ -338,10 +338,12 @@ Commands:
 GitHub Actions publishes the package from [`.github/workflows/publish-npm.yml`](.github/workflows/publish-npm.yml).
 
 1. Add repository secret `NPM_TOKEN` with an npm automation token that can publish `dotnet-production-agent-skills`.
-2. Bump `version` in `package.json` on `main` when you intend to release.
-3. Publish by creating a GitHub Release, or run **Publish to npm** via workflow dispatch (optional dist-tag: `latest`, `next`, or `beta`).
+2. Choose a versioning path:
+   - **GitHub Release**: create a release whose tag is semver (`v1.2.3` or `1.2.3`). The workflow aligns `package.json` to that version, refuses to republish an existing npm version, validates, then publishes.
+   - **Workflow dispatch**: choose `patch` / `minor` / `major` / `prerelease`, optionally override the npm dist-tag, and optionally commit/tag the bump back to the branch before publish.
+3. Dist-tags default from the version (`latest` for stable, `beta` / `next` / `alpha` / `rc` for matching prereleases) unless you override them on dispatch.
 
-The workflow runs `npm run validate` before `npm publish --access public --provenance`.
+The workflow runs version resolution, an npm uniqueness check, and `npm run validate` before `npm publish --access public --provenance`.
 
 ---
 
