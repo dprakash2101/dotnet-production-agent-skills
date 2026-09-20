@@ -1,8 +1,20 @@
 {
   "name": "dotnet-production-agent-skills",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "Portable production .NET engineering skills for coding agents",
   "license": "MIT",
+  "author": {
+    "name": "Devi Prakash",
+    "url": "https://github.com/dprakash2101"
+  },
+  "homepage": "https://dprakash2101.github.io/dotnet-production-agent-skills/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dprakash2101/dotnet-production-agent-skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dprakash2101/dotnet-production-agent-skills/issues"
+  },
   "type": "module",
   "bin": {
     "dotnet-agent-skills": "dist/src/cli.js"

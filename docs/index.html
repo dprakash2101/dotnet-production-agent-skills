@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>.NET Production Agent Skills — Portable Guidance for AI Coding Agents</title>
+  <meta name="description" content="Reusable .NET guidance for coding agents, created to reduce repeated prompting, token consumption, and code rework.">
+  <meta name="author" content="Devi Prakash">
+  <meta property="og:title" content=".NET Production Agent Skills">
+  <meta property="og:description" content="Practical .NET guidance for coding agents, built from real experience to reduce prompting, token use, and rework.">
+  <meta property="og:url" content="https://dprakash2101.github.io/dotnet-production-agent-skills/">
+  <meta property="og:type" content="website">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- Sticky Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="#" class="nav-brand">
+        <div class="brand-icon">.NET</div>
+        <span>.NET Agent Skills</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#skills" class="nav-link">Skills Catalog</a>
+        <a href="#install" class="nav-link">CLI Installer</a>
+        <a href="#architecture" class="nav-link">Architecture</a>
+        <a href="#compatibility" class="nav-link">Compatibility</a>
+        <a href="#author" class="nav-link">Author</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="theme-toggle-btn" class="theme-toggle-btn" type="button" aria-label="Switch to dark theme" aria-pressed="false">
+          <span class="theme-toggle-icon" aria-hidden="true">◐</span>
+          <span class="theme-toggle-label">Dark</span>
+        </button>
+        <a href="https://github.com/dprakash2101/dotnet-production-agent-skills" target="_blank" rel="noopener noreferrer" class="nav-btn">
+          <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-badge">
+          Production-grade <span aria-hidden="true">·</span> <span id="hero-skill-count">Focused skill library</span>
+        </div>
+        <h1 class="hero-title">
+          Practical .NET guidance<br>
+          <span class="gradient-text">for coding agents</span>
+        </h1>
+        <p class="hero-subtitle">
+          A focused collection of <code>SKILL.md</code> guidance built to reduce repeated prompting,
+          unnecessary token use, and avoidable rework when developing production .NET software with AI coding tools.
+        </p>
+
+        <div class="hero-meta">
+          <div class="meta-item"><strong id="hero-meta-count">Canonical</strong> skills</div>
+          <div class="meta-item"><strong>4</strong> agent hosts</div>
+          <div class="meta-item"><strong>Clean as You Code</strong></div>
+          <div class="meta-item">Created by <strong>Devi Prakash</strong></div>
+        </div>
+
+        <div class="hero-cta">
+          <a href="#skills" class="btn-primary">Browse the skills</a>
+          <a href="#install" class="btn-secondary">Create an install command</a>
+          <a href="https://github.com/dprakash2101/dotnet-production-agent-skills" target="_blank" rel="noopener noreferrer" class="btn-secondary">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive CLI Generator -->
+    <section id="install" class="generator-section">
+      <div class="container">
+        <div class="card-generator">
+          <div class="generator-header">
+            <div>
+              <div class="section-kicker">Quick install</div>
+              <h2 class="generator-title">Build your command</h2>
+              <p class="generator-desc">Make three choices. Start with the recommended defaults if you are unsure.</p>
+            </div>
+            <span class="recommended-badge">Safe defaults selected</span>
+          </div>
+
+          <div class="generator-layout">
+            <div class="generator-controls">
+              <fieldset class="control-group">
+                <legend><span>1</span> Choose an agent</legend>
+                <label class="select-label" for="target-select">Installation target</label>
+                <select id="target-select" class="custom-select">
+                  <option value="all" selected>All supported agents</option>
+                  <option value="codex">OpenAI Codex</option>
+                  <option value="copilot">GitHub Copilot</option>
+                  <option value="claude">Claude Code</option>
+                  <option value="cursor">Cursor</option>
+                  <option value="shared">Shared portable location</option>
+                </select>
+              </fieldset>
+
+              <fieldset class="control-group">
+                <legend><span>2</span> Choose where</legend>
+                <div class="choice-row">
+                  <label class="choice-card">
+                    <input type="radio" name="scope" value="user" checked>
+                    <span><strong>My machine</strong><small>Available across repositories</small></span>
+                  </label>
+                  <label class="choice-card">
+                    <input type="radio" name="scope" value="project">
+                    <span><strong>This project</strong><small>Stored with one repository</small></span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset class="control-group">
+                <legend><span>3</span> Choose a mode</legend>
+                <div class="choice-row">
+                  <label class="choice-card">
+                    <input type="radio" name="mode" value="copy" checked>
+                    <span><strong>Copy</strong><small>Recommended and portable</small></span>
+                  </label>
+                  <label class="choice-card">
+                    <input type="radio" name="mode" value="link">
+                    <span><strong>Link</strong><small>For local development</small></span>
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+
+            <div class="command-panel">
+              <div class="command-panel-head">
+                <div>
+                  <span class="command-label">Ready to run</span>
+                  <strong>Paste this into your terminal</strong>
+                </div>
+                <span class="command-runtime">Node.js</span>
+              </div>
+              <div class="terminal-box">
+                <div class="terminal-cmd">
+                  <span class="prompt-symbol">$</span><span id="generated-cmd">npx dotnet-production-agent-skills install --target all</span>
+                </div>
+                <button id="copy-cmd-btn" class="copy-btn" type="button">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+              <p class="command-help">The installer checks for conflicts before writing and never silently replaces user-authored files.</p>
+              <a class="command-doc-link" href="https://github.com/dprakash2101/dotnet-production-agent-skills#typescript-cli-reference" target="_blank" rel="noopener noreferrer">View every CLI command <span aria-hidden="true">→</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills Explorer -->
+    <section id="skills" class="skills-section">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title">Skills Catalog</h2>
+          <p class="section-subtitle">Find only the guidance relevant to the task at hand. Search by technology, workflow, or engineering concern.</p>
+        </div>
+
+        <div class="catalog-toolbar">
+          <div class="search-box-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="search" id="search-input" class="search-input" placeholder="Search skills, technologies, or tasks…" aria-label="Search skills">
+          </div>
+          <span id="skills-count" class="catalog-count" aria-live="polite">Loading skills…</span>
+        </div>
+
+        <div class="catalog-layout">
+          <aside class="catalog-sidebar" aria-label="Skill categories">
+            <div class="catalog-sidebar-title">Categories</div>
+            <div id="category-pills" class="category-pills">
+              <button class="pill-btn active" data-category="all"><span>All skills</span><b></b></button>
+              <button class="pill-btn" data-category="workflow"><span>Workflow</span><b></b></button>
+              <button class="pill-btn" data-category="architecture"><span>Architecture &amp; core</span><b></b></button>
+              <button class="pill-btn" data-category="api"><span>API &amp; contracts</span><b></b></button>
+              <button class="pill-btn" data-category="quality"><span>Quality &amp; tests</span><b></b></button>
+              <button class="pill-btn" data-category="cloud-db"><span>Cloud &amp; database</span><b></b></button>
+              <button class="pill-btn" data-category="resilience"><span>Resilience &amp; security</span><b></b></button>
+              <button class="pill-btn" data-category="incident"><span>Incident &amp; Git</span><b></b></button>
+            </div>
+            <p class="catalog-sidebar-note">Open a skill for its activation guidance and an example prompt.</p>
+          </aside>
+
+          <div id="skills-grid" class="skills-grid">
+            <!-- Skills rendered via JavaScript -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Architecture & Principles -->
+    <section id="architecture" class="principles-section">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title">Designed for less rework</h2>
+          <p class="section-subtitle">The library turns lessons from day-to-day use of coding agents into reusable, task-specific instructions.</p>
+        </div>
+
+        <div class="principles-grid">
+          <div class="principle-card">
+            <div class="principle-icon">🎯</div>
+            <h3 class="principle-title">Invariant-First Discipline</h3>
+            <p class="principle-desc">
+              Implement the requested behavior without mutating unrelated behavior. Task size changes investigation and test depth, not safety standards.
+            </p>
+          </div>
+
+          <div class="principle-card">
+            <div class="principle-icon">📚</div>
+            <h3 class="principle-title">Progressive Context Disclosure</h3>
+            <p class="principle-desc">
+              Agents load concise <code>SKILL.md</code> guidance only when it matches the current task, and open detailed references only when needed.
+            </p>
+          </div>
+
+          <div class="principle-card">
+            <div class="principle-icon">🛡️</div>
+            <h3 class="principle-title">Clean as You Code</h3>
+            <p class="principle-desc">
+              Repository analyzers, Roslyn warnings, Sonar rules, and <code>.editorconfig</code> guide new and materially changed code without expanding into unrelated legacy cleanup.
+            </p>
+          </div>
+
+          <div class="principle-card">
+            <div class="principle-icon">🔄</div>
+            <h3 class="principle-title">Composable Workflows</h3>
+            <p class="principle-desc">
+              Skills compose naturally. A defect flows from <code>bug-investigation</code> → <code>dotnet-implementation</code> → <code>unit-testing</code> → <code>targeted-validation</code> → <code>diff-review</code>.
+            </p>
+          </div>
+
+          <div class="principle-card">
+            <div class="principle-icon">🔒</div>
+            <h3 class="principle-title">State-Tracked Safety</h3>
+            <p class="principle-desc">
+              The TypeScript CLI tracks file digests in <code>.dotnet-agent-skills.json</code>. It stops on manual conflicts, protects custom skills, and creates automatic backups before force overwrites.
+            </p>
+          </div>
+
+          <div class="principle-card">
+            <div class="principle-icon">🌐</div>
+            <h3 class="principle-title">Works Across Agents</h3>
+            <p class="principle-desc">
+              Canonical skills follow the portable <code>SKILL.md</code> format. The installer adapts their location for Codex, Copilot, Claude Code, and Cursor.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Compatibility Section -->
+    <section id="compatibility" class="principles-section" style="border-top: none;">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title">Agent compatibility</h2>
+          <p class="section-subtitle">One canonical skill library, installed into the discovery location used by each supported agent.</p>
+        </div>
+
+        <div style="overflow-x: auto; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color); padding: 24px;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-primary);">
+                <th style="padding: 12px 16px;">Agent Host</th>
+                <th style="padding: 12px 16px;">Native Format</th>
+                <th style="padding: 12px 16px;">User Scope Location</th>
+                <th style="padding: 12px 16px;">Project Scope Location</th>
+                <th style="padding: 12px 16px;">Installation Method</th>
+              </tr>
+            </thead>
+            <tbody style="color: var(--text-secondary);">
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary);">OpenAI Codex</td>
+                <td style="padding: 12px 16px;">Portable <code>SKILL.md</code></td>
+                <td style="padding: 12px 16px;"><code>~/.agents/skills</code></td>
+                <td style="padding: 12px 16px;"><code>&lt;repo&gt;/.agents/skills</code></td>
+                <td style="padding: 12px 16px;"><span class="tag-badge">Copy / Symlink</span></td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary);">GitHub Copilot</td>
+                <td style="padding: 12px 16px;">Agent Skills</td>
+                <td style="padding: 12px 16px;"><code>~/.copilot/skills</code></td>
+                <td style="padding: 12px 16px;"><code>&lt;repo&gt;/.github/skills</code></td>
+                <td style="padding: 12px 16px;"><span class="tag-badge">Copy / Symlink</span></td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary);">Claude Code</td>
+                <td style="padding: 12px 16px;">Portable <code>SKILL.md</code></td>
+                <td style="padding: 12px 16px;"><code>~/.claude/skills</code></td>
+                <td style="padding: 12px 16px;"><code>&lt;repo&gt;/.claude/skills</code></td>
+                <td style="padding: 12px 16px;"><span class="tag-badge">Copy / Symlink</span></td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary);">Cursor</td>
+                <td style="padding: 12px 16px;">Agent Skills</td>
+                <td style="padding: 12px 16px;"><code>~/.cursor/skills</code> or <code>.agents</code></td>
+                <td style="padding: 12px 16px;"><code>&lt;repo&gt;/.cursor/skills</code></td>
+                <td style="padding: 12px 16px;"><span class="tag-badge">Copy / Symlink</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Project Story -->
+    <section id="author" class="author-section">
+      <div class="container">
+        <div class="author-story">
+          <div class="author-story-copy">
+            <div class="section-kicker">Built from experience</div>
+            <h2>Less repetition.<br>Less token waste.<br><span>Less rework.</span></h2>
+          </div>
+          <div class="author-story-detail">
+            <p>
+              I created <strong>dotnet-production-agent-skills</strong> after repeatedly explaining the same production expectations to GitHub Copilot—then spending more tokens correcting and reworking the result. This project captures those lessons as focused, reusable guidance so coding agents can start with better context and produce safer .NET code the first time.
+            </p>
+            <div class="author-identity">
+              <div class="author-avatar" aria-hidden="true">DP</div>
+              <div>
+                <strong>Devi Prakash</strong>
+                <span>Creator and maintainer</span>
+              </div>
+            </div>
+            <div class="author-links">
+              <a href="https://github.com/dprakash2101" target="_blank" rel="noopener noreferrer" class="author-btn">
+                <svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                <span>GitHub profile</span>
+              </a>
+              <a href="https://github.com/dprakash2101/dotnet-production-agent-skills" target="_blank" rel="noopener noreferrer" class="author-btn">
+                <span>View repository <span aria-hidden="true">→</span></span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Interactive Modal / Spec Inspector -->
+  <div id="modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <div>
+          <h3 id="modal-title" style="display: flex; align-items: center; gap: 8px; font-size: 1.3rem;"></h3>
+          <div id="modal-category" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;"></div>
+        </div>
+        <button id="modal-close-btn" class="modal-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section-title">Focus & Specification</div>
+        <p id="modal-desc" style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; font-size: 0.95rem;"></p>
+
+        <div class="modal-section-title">When to Activate</div>
+        <div style="background: var(--bg-card); border-left: 3px solid var(--accent-primary); padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 20px;">
+          <p id="modal-trigger" style="color: var(--text-primary); font-size: 0.9rem; line-height: 1.5;"></p>
+        </div>
+
+        <div id="modal-references"></div>
+
+        <div style="margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="modal-section-title" style="margin-bottom: 0;">Example Agent Prompt</div>
+            <button id="copy-prompt-btn" class="copy-btn" style="padding: 4px 10px; font-size: 0.78rem;">
+              <span>Copy Prompt</span>
+            </button>
+          </div>
+          <div id="modal-prompt" class="prompt-snippet-box"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast" class="toast" role="status" aria-live="polite">Copied to clipboard!</div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-credits">
+        Created & maintained by <strong>Devi Prakash</strong>. Released under the MIT License.
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/dprakash2101/dotnet-production-agent-skills">GitHub</a>
+        <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/blob/main/LICENSE">License</a>
+        <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/issues">Issues</a>
+        <a href="https://agentskills.io/specification" target="_blank" rel="noopener noreferrer">Agent Skills Spec</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="skills-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

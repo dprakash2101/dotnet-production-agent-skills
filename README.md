@@ -1,218 +1,368 @@
 # .NET Production Agent Skills
 
-A vendor-neutral Agent Skills library for production .NET and ASP.NET Core work, with a small TypeScript installer for Codex, GitHub Copilot, Claude Code, and Cursor.
+<div align="center">
 
-The repository has one source of truth:
+[![Documentation](https://img.shields.io/badge/Documentation-Browse-2563eb.svg?style=flat-square&logo=githubpages)](https://dprakash2101.github.io/dotnet-production-agent-skills/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-512BD4.svg?style=flat-square)](LICENSE)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-Vendor--neutral-059669.svg?style=flat-square)](https://agentskills.io/specification)
 
-```text
-skills/ (canonical Agent Skills)
-  -> TypeScript install/sync adapter
-     -> host discovery directories
-```
+## Practical .NET guidance for coding agents
 
-Canonical skills use the portable [`SKILL.md` format](https://agentskills.io/specification). They deliberately avoid vendor-only tool permissions and invocation metadata. Host-specific behavior is confined to installation paths, so guidance is maintained once rather than copied into four trees.
+A focused collection of `SKILL.md` guidance built to reduce repeated prompting, unnecessary token use, and avoidable rework when developing production .NET software with AI coding tools.
 
-The core invariant is: implement the requested behavior without changing unrelated behavior. Task size changes investigation and validation depth, not safety standards.
+[Browse the skills catalog](https://dprakash2101.github.io/dotnet-production-agent-skills/#skills) · [Build an install command](https://dprakash2101.github.io/dotnet-production-agent-skills/#install) · [Report an issue](https://github.com/dprakash2101/dotnet-production-agent-skills/issues)
 
-## Skills catalog
+</div>
 
-| Skill | Focus |
-| --- | --- |
-| `task-router` | Select the smallest appropriate engineering workflow when the path is unclear. |
-| `context-reset` | Reorient safely when a new instruction replaces work in progress. |
-| `safe-terminal` | Run and recover from shell commands without broad or accidental mutation. |
-| `dotnet-architecture` | Preserve or design boundaries for substantial .NET changes. |
-| `dotnet-implementation` | Implement scoped production .NET behavior in an existing codebase. |
-| `bug-investigation` | Trace a symptom to a demonstrated root cause before proposing a fix. |
-| `shared-code-impact` | Find consumers and constrain changes to shared components. |
-| `api-contract-safety` | Protect observable HTTP and public interface behavior. |
-| `aspnet-core-api-development` | Create customer-facing APIs with thin endpoints, validation, services, and stable responses. |
-| `api-endpoint-deprecation` | Manage endpoint deprecation, migration, usage verification, approval, and removal. |
-| `exception-handling` | Set recovery, translation, cancellation, and logging boundaries for general .NET exceptions. |
-| `production-logging` | Produce useful, structured, sensitive-data-safe, cost-aware production logs. |
-| `code-quality` | Apply Clean-as-You-Code, analyzer, and Sonar expectations to changed code. |
-| `unit-testing` | Maximize useful behavioral confidence without duplicate or slow tests. |
-| `targeted-validation` | Progress from narrow checks to broader validation in proportion to risk. |
-| `diff-review` | Audit the final diff for scope, regressions, secrets, and accidental changes. |
-| `git-workflow` | Perform explicitly requested branch, stage, commit, and push operations safely. |
-| `production-hotfix` | Minimize blast radius for an explicitly identified production incident. |
-| `poc-development` | Build a bounded experiment to answer a defined technical question. |
-| `code-review` | Report prioritized correctness, regression, security, and test findings. |
-| `ef-core-safety` | Protect EF Core query, `DbContext`, transaction, and migration behavior. |
-| `relational-database-dotnet` | Guide ADO.NET/provider access for PostgreSQL and Oracle. |
-| `google-cloud-pubsub-dotnet` | Build production publishers and pull subscribers with correct delivery semantics. |
-| `google-bigquery-dotnet` | Query BigQuery safely with parameterization, correct types, pagination, and cost awareness. |
-| `google-firestore-dotnet` | Model and access Firestore documents with concurrency, index, and read-cost awareness. |
-| `distributed-workflows` | Handle retries, idempotency, background work, and partial failure across systems. |
-| `dependency-management` | Add, remove, assess, or upgrade .NET/NuGet dependencies conservatively. |
-| `production-debugging` | Diagnose production-like failures from safe operational evidence. |
-| `dotnet-security` | Threat-model and protect sensitive .NET trust boundaries. |
+---
 
-Descriptions are intentionally narrow so an ordinary controller task does not load Pub/Sub, BigQuery, Firestore, PostgreSQL, and Oracle guidance.
+## Table of Contents
 
-## Composition and progressive context
+- [Overview & Core Philosophy](#overview--core-philosophy)
+- [Architecture & Progressive Disclosure](#architecture--progressive-disclosure)
+- [Quick Start](#quick-start)
+- [Skills Catalog](#skills-catalog)
+  - [🧭 Workflow & Orientation](#1--workflow--orientation)
+  - [🏗️ Architecture & Core Implementation](#2-️-architecture--core-implementation)
+  - [🛡️ API Contracts & Boundaries](#3-️-api-contracts--boundaries)
+  - [🧪 Quality, Testing & Review](#4--quality-testing--review)
+  - [☁️ Cloud & Database Engineering](#5-️-cloud--database-engineering)
+  - [⚡ Distributed Resilience & Security](#6-️-distributed-resilience--security)
+  - [🔍 Incident Response & Diagnosis](#7--incident-response--diagnosis)
+- [Composition Workflows](#composition-workflows)
+- [Quality Policies & Standards](#quality-policies--standards)
+- [TypeScript CLI Reference](#typescript-cli-reference)
+  - [Installation Targets & Paths](#installation-targets--paths)
+  - [Safety & Conflict Handling](#safety--conflict-handling)
+- [Host Compatibility](#host-compatibility)
+- [Validation & Development](#validation--development)
+- [Why I built this](#why-i-built-this)
+- [License](#license)
 
-Hosts initially discover only skill names and descriptions. A matching task loads its concise `SKILL.md`; detailed references load only when the active scenario needs them.
+---
 
-The cloud/database layout follows that rule:
+## Overview & Core Philosophy
+
+**dotnet-production-agent-skills** captures reusable production guidance for coding agents working on modern .NET and ASP.NET Core codebases. It maintains one canonical source of truth and uses a small TypeScript installer to adapt that content to supported agent discovery locations.
+
+The repository maintains **one canonical source of truth**:
 
 ```text
-google-cloud-pubsub-dotnet/
-  SKILL.md
-  references/client-patterns.md
-google-bigquery-dotnet/
-  SKILL.md
-  references/query-safety.md
-google-firestore-dotnet/
-  SKILL.md
-relational-database-dotnet/
-  SKILL.md
-  references/postgresql.md
-  references/oracle.md
+skills/ (canonical portable Agent Skills)
+  ├── focused SKILL.md specifications
+  └── targeted references/ (deep dive technical guides)
+         │
+         ▼
+  TypeScript Adapter (dist/src/cli.js)
+         │
+         ├── Codex         →  .agents/skills
+         ├── GitHub Copilot →  .github/skills | .copilot/skills
+         ├── Claude Code   →  .claude/skills
+         └── Cursor        →  .cursor/skills | .agents/skills
 ```
 
-Provider skills own only provider behavior. They compose with `production-logging`, `exception-handling`, `unit-testing`, or `distributed-workflows` when those concerns are actually present instead of repeating generic rules. `relational-database-dotnet` shares common ADO.NET safety while loading only the PostgreSQL or Oracle reference required. EF Core tasks continue to use `ef-core-safety`, adding the provider skill only when provider-specific behavior matters.
+### Core Engineering Invariant
 
-Typical compositions include:
+> **Implement the requested behavior without changing unrelated behavior.**
+>
+> Task size changes investigation depth and validation rigor — never baseline safety standards.
 
-| Scenario | Suggested skills |
-| --- | --- |
-| Small defect | `bug-investigation` -> `dotnet-implementation` -> focused `unit-testing` -> diff/validation |
-| New customer API | `aspnet-core-api-development` + `api-contract-safety` + `exception-handling` |
-| Pub/Sub worker | `google-cloud-pubsub-dotnet` + `distributed-workflows` + logging/tests as needed |
-| PostgreSQL ADO.NET change | `relational-database-dotnet` + PostgreSQL reference |
-| EF Core provider issue | `ef-core-safety` + the relevant relational provider reference |
+- **No Hallucinated Edits**: Narrow, intentional changes that preserve existing patterns.
+- **Progressive Context Disclosure**: Prevents token waste by loading comprehensive reference guides only when the specific scenario demands it.
+- **Vendor Agnostic**: Adheres to the portable [Agent Skills specification](https://agentskills.io/specification). Guidance is maintained in one place rather than duplicated across agent ecosystems.
 
-## Quality policy
+---
 
-### Sonar and Clean-as-You-Code
+## Architecture & Progressive Disclosure
 
-`code-quality` tells the agent to inspect repository-specific SonarCloud/SonarQube settings, analyzers, `.editorconfig`, nullable settings, suppressions, and language version before coding. Those rules take precedence over generic assumptions. New and materially changed code is designed proactively for reliability, security, maintainability, nullability, async/resource correctness, testability, low cognitive complexity, and meaningful duplication avoidance.
+Agents initially ingest only skill **names** and **descriptions**. When a task activates a skill, its concise `SKILL.md` is loaded. Specialized references (e.g. ADO.NET connection pools, BigQuery cost minimization, or API boundary error handling) are pulled into context only on demand:
 
-The skill follows Sonar's [Clean as You Code](https://docs.sonarsource.com/sonarqube-cloud/standards/about-new-code/) model: it does not turn an unrelated task into a cleanup of every historical finding. Before adding substantial logic, agents search the relevant scope for equivalent behavior. They reuse or extract a focused abstraction only when concepts genuinely match, after checking callers and preserving behavior.
+```mermaid
+flowchart TD
+    subgraph Discovery ["1. Host Discovery (Zero Context Overhead)"]
+        D1["Scan Skill Names & Descriptions"]
+    end
 
-### Unit-test optimization
+    subgraph Activation ["2. Scenario Matching"]
+        D1 -->|User Request Matches Scenario| S1["Load canonical SKILL.md"]
+    end
 
-`unit-testing` targets roughly 90–100% meaningful coverage of new or materially changed business logic where practical, not maximum test count. It prefers framework-supported parameterized tests for the same behavior across inputs, focused regression tests for fixes, observable behavior over implementation detail, and mocks only at meaningful boundaries. It avoids retesting framework behavior, duplicating the same branch, and excessive setup that increases CI time without confidence.
-
-### Endpoint deprecation
-
-`api-endpoint-deprecation` treats removal as an explicit breaking change:
-
-```text
-ACTIVE -> DEPRECATED -> MIGRATION WINDOW -> USAGE VERIFIED
-       -> REMOVAL APPROVED -> REMOVED
+    subgraph References ["3. Progressive Disclosure (On Demand Only)"]
+        S1 -->|Cloud / Complex Task| R1["references/client-patterns.md"]
+        S1 -->|Relational Database| R2["references/postgresql.md OR oracle.md"]
+        S1 -->|HTTP Error Boundaries| R3["references/api-boundaries.md"]
+    end
 ```
 
-The workflow considers versioning, metadata and headers, OpenAPI/developer documentation, replacement guidance, consumer communication, telemetry, compatibility, routing, and feature flags. It searches code, tests, documentation, and known internal consumers, but never equates "no repository reference" with "no external consumer." Actual deletion requires explicit direction or approval.
+This layout ensures an ordinary controller edit does not saturate the agent's context window with Pub/Sub, BigQuery, Firestore, and Oracle rules.
 
-### Dependency management
+---
 
-`dependency-management` separates additions, unused-package removal, compatibility repair, security remediation, and upgrades. Removal checks direct and transitive use, tooling, analyzers, source generators, reflection/configuration loading, and test-only use—not just a text search. Upgrades target the smallest compatible version, review breaking changes and transitive conflicts, and do not blindly chase latest versions or warnings. Package sources, credentials, and private-feed authentication are never changed without explicit permission.
+## Quick Start
 
-Database skills do not add custom retries merely because transient faults exist. Retry behavior is introduced only when requested or already required by the architecture, with idempotency, transaction boundaries, duplicate writes, timeouts, classification, bounded backoff/jitter, cancellation, and observability considered first. Provider/framework resilience is preferred over hand-written loops.
-
-## TypeScript CLI
-
-The runtime CLI is written in TypeScript, compiled to dependency-free Node.js ESM, and requires Node.js 18 or newer. It supports:
-
-```text
-install    install the packaged canonical skills
-update     refresh managed skills and retire removed packaged skills
-list       show packaged skills and installation state
-doctor     validate canonical metadata and report installation health
-uninstall remove only skills tracked by this package
-```
-
-The npm package name is `dotnet-production-agent-skills`; the installed executable is `dotnet-agent-skills`.
-
-### Local checkout
-
-The package is not published to npm yet. From a checkout:
+Choose the smallest command that matches how you work. Copy mode is the recommended default because it is portable and easy to inspect.
 
 ```sh
+# Recommended: install for supported agents on this machine
+npx dotnet-production-agent-skills install --target all
+
+# Keep the installation inside the current repository
+npx dotnet-production-agent-skills install --target all --scope project
+
+# Install for one agent only
+npx dotnet-production-agent-skills install --target copilot
+```
+
+| Choice | Use it when | Flag |
+| :--- | :--- | :--- |
+| **All agents** | You use more than one supported coding agent. | `--target all` |
+| **One agent** | You only want Codex, Copilot, Claude Code, or Cursor. | `--target <agent>` |
+| **My machine** | You want skills available across repositories. | default user scope |
+| **This project** | You want repository-specific installation. | `--scope project` |
+| **Copy** | You want the safest, portable installation. | default mode |
+| **Link** | You are developing the skill library locally. | `--mode link` |
+
+### From Local Checkout
+
+```sh
+# Clone and build
+git clone https://github.com/dprakash2101/dotnet-production-agent-skills.git
+cd dotnet-production-agent-skills
 npm install
 npm run build
+
+# Run health check & dry run
 node dist/src/cli.js doctor --target all
 node dist/src/cli.js install --target all --dry-run
-node dist/src/cli.js install --target codex
+
+# Perform installation
+node dist/src/cli.js install --target all
 ```
 
-After a future npm publication, the intended experience is:
+Shell and PowerShell scripts are also provided:
 
 ```sh
-npx dotnet-production-agent-skills install --target all
-npx dotnet-production-agent-skills doctor --target copilot
-npx dotnet-production-agent-skills update --target all
-npx dotnet-production-agent-skills list --target cursor
-npx dotnet-production-agent-skills uninstall --target claude
-```
-
-The shell and PowerShell wrappers invoke `install` from a built checkout:
-
-```sh
+# POSIX (Linux / macOS)
 ./scripts/install-skills.sh --target all
-./scripts/install-skills.ps1 --target all
+
+# Windows PowerShell
+./scripts/install-skills.ps1 -Target all
 ```
 
-### Targets and scope
+---
 
-| Target | User scope | Project scope |
-| --- | --- | --- |
-| `shared` / `codex` | `~/.agents/skills` | `<project>/.agents/skills` |
+## Skills Catalog
+
+The catalog is grouped by task so agents can load only the guidance relevant to the current work. Use the [interactive catalog](https://dprakash2101.github.io/dotnet-production-agent-skills/#skills) to search by technology, workflow, or engineering concern.
+
+### 1. 🧭 Workflow & Orientation
+
+| Skill | Focus & Trigger | Progressive References |
+| :--- | :--- | :--- |
+| [`task-router`](skills/task-router/SKILL.md) | Classify requests to select the smallest proportionate workflow when the path forward is ambiguous. | — |
+| [`context-reset`](skills/context-reset/SKILL.md) | Reorient safely when user instructions interrupt, pivot, or invalidate an in-progress coding task. | — |
+| [`safe-terminal`](skills/safe-terminal/SKILL.md) | Execute shell commands safely, handle failures, and prevent accidental mutations or credential leaks. | — |
+| [`poc-development`](skills/poc-development/SKILL.md) | Build bounded, explicit spikes or prototypes to answer technical questions without cutting production corners prematurely. | — |
+
+### 2. 🏗️ Architecture & Core Implementation
+
+| Skill | Focus & Trigger | Progressive References |
+| :--- | :--- | :--- |
+| [`dotnet-architecture`](skills/dotnet-architecture/SKILL.md) | Design and preserve clean boundaries, layering, and DI registrations for substantial changes. | [architecture-patterns](skills/dotnet-architecture/references/architecture-patterns.md) |
+| [`dotnet-implementation`](skills/dotnet-implementation/SKILL.md) | Implement robust production .NET & ASP.NET Core behavior adhering to established repository conventions. | [idiomatic-csharp](skills/dotnet-implementation/references/idiomatic-csharp.md) |
+| [`shared-code-impact`](skills/shared-code-impact/SKILL.md) | Identify all consumers, analyze ripple effects, and strictly constrain changes to shared libraries/helpers. | — |
+| [`dependency-management`](skills/dependency-management/SKILL.md) | Assess, add, prune, or upgrade NuGet dependencies conservatively without breaking transitive graphs. | — |
+
+### 3. 🛡️ API Contracts & Boundaries
+
+| Skill | Focus & Trigger | Progressive References |
+| :--- | :--- | :--- |
+| [`aspnet-core-api-development`](skills/aspnet-core-api-development/SKILL.md) | Build thin controllers/minimal APIs with validation, structured responses, and complete OpenAPI specs. | — |
+| [`api-contract-safety`](skills/api-contract-safety/SKILL.md) | Guard HTTP contracts against unintended breaking changes across routes, payloads, error formats, and headers. | — |
+| [`api-endpoint-deprecation`](skills/api-endpoint-deprecation/SKILL.md) | Execute formal multi-stage API deprecation, migration windows, consumer verification, and safe retirement. | — |
+| [`exception-handling`](skills/exception-handling/SKILL.md) | Establish clear recovery, translation, cancellation, and logging boundaries across .NET application tiers. | [api-boundaries](skills/exception-handling/references/api-boundaries.md) |
+
+### 4. 🧪 Quality, Testing & Review
+
+| Skill | Focus & Trigger | Progressive References |
+| :--- | :--- | :--- |
+| [`code-quality`](skills/code-quality/SKILL.md) | Apply Clean-as-You-Code principles, Roslyn analyzers, and Sonar expectations to new/modified code. | — |
+| [`unit-testing`](skills/unit-testing/SKILL.md) | Target 90–100% meaningful coverage of new business logic using parameterized tests without test bloat. | — |
+| [`code-review`](skills/code-review/SKILL.md) | Review diffs rigorously for correctness, security, concurrency, performance, and regression risks. | — |
+| [`targeted-validation`](skills/targeted-validation/SKILL.md) | Run proportionate verification (from single-test execution to full suite runs) aligned with change risk. | — |
+| [`diff-review`](skills/diff-review/SKILL.md) | Perform a final pre-commit audit of working tree diffs for accidental mutations, formatting drift, and secrets. | — |
+
+### 5. ☁️ Cloud & Database Engineering
+
+| Skill | Focus & Trigger | Progressive References |
+| :--- | :--- | :--- |
+| [`ef-core-safety`](skills/ef-core-safety/SKILL.md) | Prevent N+1 queries, audit DbContext lifecycles, manage transactions, and write safe migrations. | — |
+| [`relational-database-dotnet`](skills/relational-database-dotnet/SKILL.md) | Execute high-performance ADO.NET access, connection lifecycle, and parameterized queries for PostgreSQL & Oracle. | [postgresql](skills/relational-database-dotnet/references/postgresql.md), [oracle](skills/relational-database-dotnet/references/oracle.md) |
+| [`google-cloud-pubsub-dotnet`](skills/google-cloud-pubsub-dotnet/SKILL.md) | Implement robust Google Cloud Pub/Sub publishers and pull subscribers with proper ack/nack semantics. | [client-patterns](skills/google-cloud-pubsub-dotnet/references/client-patterns.md) |
+| [`google-bigquery-dotnet`](skills/google-bigquery-dotnet/SKILL.md) | Query BigQuery with parameterization, pagination, streaming buffers, and strict query-cost awareness. | [query-safety](skills/google-bigquery-dotnet/references/query-safety.md) |
+| [`google-firestore-dotnet`](skills/google-firestore-dotnet/SKILL.md) | Model Firestore documents, transactions, and batched writes with concurrency and read-cost awareness. | — |
+
+### 6. ⚡ Distributed Resilience & Security
+
+| Skill | Focus & Trigger | Progressive References |
+| :--- | :--- | :--- |
+| [`distributed-workflows`](skills/distributed-workflows/SKILL.md) | Build idempotent consumers, handle partial failures, manage distributed retries, and design background workers. | — |
+| [`dotnet-security`](skills/dotnet-security/SKILL.md) | Threat-model .NET boundaries, protect against SSRF/XSS/SQLi, enforce authorization, and handle secrets safely. | — |
+| [`production-logging`](skills/production-logging/SKILL.md) | Produce structured, high-signal, sensitive-data-masked, and cost-efficient Serilog/ILogger production logs. | — |
+
+### 7. 🔍 Incident Response & Diagnosis
+
+| Skill | Focus & Trigger | Progressive References |
+| :--- | :--- | :--- |
+| [`bug-investigation`](skills/bug-investigation/SKILL.md) | Isolate symptoms to an empirical root cause before proposing or writing code modifications. | — |
+| [`production-debugging`](skills/production-debugging/SKILL.md) | Diagnose production failures from telemetry, dumps, traces, and metrics without mutating live state. | — |
+| [`production-hotfix`](skills/production-hotfix/SKILL.md) | Formulate and validate emergency incident hotfixes with minimal blast radius and rapid evidence-based testing. | — |
+| [`git-workflow`](skills/git-workflow/SKILL.md) | Carry out requested branch, commit, and push operations using efficient batch commands and clean Git hygiene. | — |
+
+---
+
+## Composition Workflows
+
+Rather than bloating single skills, skills are composed to form seamless end-to-end engineering pipelines:
+
+```mermaid
+flowchart LR
+    subgraph DefectWorkflow ["Fixing a Production Defect"]
+        BI["bug-investigation"] --> DI["dotnet-implementation"]
+        DI --> UT["unit-testing"]
+        UT --> TV["targeted-validation"]
+        TV --> DR["diff-review"]
+    end
+```
+
+```mermaid
+flowchart LR
+    subgraph ApiWorkflow ["Building a Customer-Facing API"]
+        AD["aspnet-core-api-development"] --> CS["api-contract-safety"]
+        CS --> EH["exception-handling"]
+        EH --> PL["production-logging"]
+        PL --> CQ["code-quality"]
+    end
+```
+
+```mermaid
+flowchart LR
+    subgraph CloudWorker ["Building an Event-Driven Worker"]
+        PS["google-cloud-pubsub-dotnet"] --> DW["distributed-workflows"]
+        DW --> EF["ef-core-safety / relational-database"]
+        EF --> PL2["production-logging"]
+    end
+```
+
+---
+
+## Quality Policies & Standards
+
+### Sonar & Clean-as-You-Code
+- Automatically inspects `.editorconfig`, repository analyzers, Roslyn rules, and SonarCloud settings before writing C#.
+- Adheres to [Clean as You Code](https://docs.sonarsource.com/sonarqube-cloud/standards/about-new-code/): fixes new defects and complexity in modified code without derailing tasks into massive legacy cleanups.
+
+### Targeted Unit-Test Coverage (90–100%)
+- Focuses on 90–100% meaningful coverage of new or modified business logic.
+- Avoids redundant test counts and brittle implementation testing; prioritizes framework-native parameterized tests (`[Theory]`, `[TestCase]`) and real observable outcomes.
+
+### Formal API Deprecation Lifecycle
+Endpoints follow an explicit, multi-step deprecation cycle before removal:
+
+$$\text{ACTIVE} \longrightarrow \text{DEPRECATED} \longrightarrow \text{MIGRATION WINDOW} \longrightarrow \text{USAGE VERIFIED} \longrightarrow \text{REMOVAL APPROVED} \longrightarrow \text{REMOVED}$$
+
+External consumers are never assumed absent just because no internal repository reference is found.
+
+---
+
+## TypeScript CLI Reference
+
+The installer CLI is written in TypeScript and compiles to dependency-free Node.js ESM (requiring Node.js >= 18).
+
+```text
+dotnet-agent-skills <command> [options]
+
+Commands:
+  install      Install canonical skills into agent discovery paths
+  update       Refresh managed skills and retire stale/removed skills
+  list         Display available skills and current installation status
+  doctor       Validate skill metadata and report host installation health
+  uninstall    Safely remove only skills tracked by this package
+```
+
+### Options & Flags
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--target <host>` | Target agent: `all`, `shared`, `codex`, `copilot`, `claude`, `cursor` | `all` |
+| `--scope <scope>` | Installation scope: `user` (home dir) or `project` (repository dir) | `user` |
+| `--project <path>`| Explicit path to repository root (forces `--scope project`) | Current dir |
+| `--mode <mode>`   | Installation mode: `copy` (portable) or `link` (symlinks) | `copy` |
+| `--dry-run`       | Simulate actions without modifying disk | `false` |
+| `--force`         | Overwrite conflict files after moving originals to backup | `false` |
+| `--yes`           | Bypass confirmation prompts (required for non-interactive force) | `false` |
+| `--json`          | Format output as JSON (supported on `list` and `doctor`) | `false` |
+
+### Installation Targets & Paths
+
+| Target | User Scope (`~`) | Project Scope (`<repo>`) |
+| :--- | :--- | :--- |
+| `codex` / `shared` | `~/.agents/skills` | `<project>/.agents/skills` |
 | `copilot` | `~/.copilot/skills` | `<project>/.github/skills` |
 | `claude` | `~/.claude/skills` | `<project>/.claude/skills` |
 | `cursor` | `~/.cursor/skills` | `<project>/.cursor/skills` |
-| `all` | shared `.agents` plus `.claude` | project `.agents` plus `.claude` |
+| `all` | `~/.agents/skills` + `~/.claude/skills` | `<project>/.agents/skills` + `<project>/.claude/skills` |
 
-User scope is the default. Use `--scope project` in the current directory or `--project /path/to/repository`. Other options are `--mode copy|link`, `--dry-run`, `--force`, `--yes`, and `--json` for `list`/`doctor`.
+### Safety & Conflict Handling
 
-`all` minimizes copies by using `.agents/skills` for Codex, Copilot, and Cursor and `.claude/skills` for Claude Code. Because Copilot and Cursor can also scan Claude-compatible locations, a host may discover the same skill twice when both trees are visible. Prefer a single explicit target when deterministic host-specific discovery matters.
+- **State Manifest**: Managed installations are tracked in `.dotnet-agent-skills.json` with cryptographic content digests.
+- **Conflict Protection**: If a destination file was manually modified or belongs to another tool, the CLI aborts and refuses to overwrite.
+- **Safe Backups**: When `--force` is authorized, conflicting skills are backed up to timestamped archives before replacement.
+- **Surgical Uninstallation**: `uninstall` only removes files explicitly tracked by the manifest, leaving custom user skills untouched.
 
-### Conservative installation behavior
+---
 
-Copy mode is the default: it works across Windows, macOS, and Linux and does not leave an `npx` installation pointing into an ephemeral package cache. Link mode is opt-in and best suited to a persistent local checkout; symlink/junction permissions and host support vary.
+## Host Compatibility
 
-The CLI records managed paths and content digests in `.dotnet-agent-skills.json`. It does not silently overwrite an unmanaged path or a locally modified managed skill. Conflicts stop the command unless `--force` is supplied; interactive force asks for confirmation, and non-interactive force also requires `--yes`. Replaced conflicts are moved to a timestamped backup. `update` also detects skills removed from the package, and `uninstall` removes only tracked installations while protecting modified content. Use `--dry-run` before a material install, update, or removal.
+| Agent Platform | Native Specification | Adapter Support | Operational Notes |
+| :--- | :--- | :--- | :--- |
+| **OpenAI Codex** | Portable `SKILL.md` in `.agents/skills` | Direct copy or symlink into `.agents/skills` | Follows native discovery paths for user & project scopes. |
+| **GitHub Copilot** | `.github/skills`, `.agents/skills` | Installs to `.github/skills` (project) or `.copilot/skills` (user) | Surface capabilities vary across VS Code, Visual Studio, and JetBrains. |
+| **Claude Code** | Portable `SKILL.md` in `.claude/skills` | Direct copy or symlink into `.claude/skills` | Supports project & user scopes. Committed project skills recommended for team consistency. |
+| **Cursor** | `.cursor/skills` and `.agents/skills` | Installs to `.cursor/skills` or shared `.agents/skills` | Auto-detects compatible `.agents/skills` layouts. |
 
-## Compatibility
+---
 
-Compatibility below distinguishes the portable skill format from discovery-path adaptation. It reflects the linked documentation as reviewed for this repository; agent products evolve, so verify current host behavior before publishing or changing installation defaults.
+## Validation & Development
 
-| Agent | Natively supported | Supported through this adapter | Unsupported or documented limits |
-| --- | --- | --- | --- |
-| [OpenAI Codex](https://developers.openai.com/docs/build-skills) | Portable `SKILL.md` skills in project/user `.agents/skills`; documented symlink discovery. | CLI installs canonical skills into the native location by copy or link. | Broad marketplace-style distribution may be better served by Codex plugins; this package does not add vendor-specific plugin metadata. |
-| [GitHub Copilot](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) | Agent Skills in project `.github/skills`, `.agents/skills`, and compatible locations; personal support depends on the Copilot surface. | CLI chooses `.github/skills` for project scope and `.copilot/skills` for user scope, or shares `.agents/skills` via `all`. | Discovery and personal-skill behavior vary across Copilot surfaces; this repository does not claim every IDE/cloud surface loads every location or follows symlinks. GitHub's `gh skill` ecosystem is a separate distribution option. |
-| [Claude Code](https://code.claude.com/docs/en/skills) | The same `SKILL.md` shape in project/user `.claude/skills`; documented symlinked skill directories. | CLI copies or links the canonical `skills/` tree into `.claude/skills`. | `.agents/skills` is not documented as a Claude Code discovery path. Personal local skills are not automatically available in every Claude cloud/Cowork context; committed project skills are the portable route there. |
-| [Cursor](https://cursor.com/docs/skills) | Agent Skills in `.agents/skills` and `.cursor/skills`, with documented compatibility discovery for other agent directories. | CLI uses `.cursor/skills` for an explicit target or shared `.agents/skills` for `all`. | Only Cursor's own user-level skill location is documented for Cursor cloud synchronization; `.agents` should be treated as local unless current docs say otherwise. Symlink behavior is not claimed where undocumented. |
-
-No row claims behavioral equivalence across model hosts: selection, tool access, context limits, and higher-priority instructions remain host-controlled.
-
-The implementation guidance was also checked against primary documentation for [Google Cloud Pub/Sub for .NET](https://docs.cloud.google.com/dotnet/docs/reference/Google.Cloud.PubSub.V1/latest), [BigQuery for .NET](https://docs.cloud.google.com/dotnet/docs/reference/Google.Cloud.BigQuery.V2/latest/Google.Cloud.BigQuery.V2.BigQueryClient), [Firestore for .NET](https://docs.cloud.google.com/dotnet/docs/reference/Google.Cloud.Firestore/latest/Google.Cloud.Firestore.FirestoreDb), [Npgsql](https://www.npgsql.org/doc/basic-usage.html), [Oracle ODP.NET asynchronous programming](https://docs.oracle.com/en/database/oracle/oracle-database/26/odpnt/featAsyncPipelining.html), [`IHttpClientFactory`](https://learn.microsoft.com/en-us/dotnet/core/extensions/httpclient-factory), [.NET dependency-injection lifetimes](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection/service-lifetimes), and [ASP.NET Core hosted services](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services).
-
-## Additional .NET skills worth considering
-
-The current library already covers cancellation propagation, async/sync-over-async, `HttpClientFactory`, DI lifetimes, scoped services in `BackgroundService`, graceful shutdown, concurrency, idempotency, EF Core query shape/N+1 risks, pagination, configuration, dates, and nullable references within focused existing skills. Splitting each topic into a standalone skill would create noisy triggering and duplicate context.
-
-Three future skills have enough distinct workflow to consider after observing repeated demand:
-
-- `dotnet-observability`: coordinate OpenTelemetry traces, metrics, baggage/correlation, health checks, sampling, and service-level signals. This is broader than logging and benefits from an end-to-end instrumentation workflow.
-- `dotnet-performance-diagnostics`: measure allocations, GC, thread-pool starvation, contention, and hot paths before optimizing. A measurement-first workflow would guard against speculative micro-optimization.
-- `configuration-and-feature-rollout`: handle options validation, secrets references, feature flags, staged rollout, rollback, and startup failure policy when repositories repeatedly need release-safety work.
-
-These are recommendations, not implemented skills. Add them only when real tasks justify distinct triggering and reusable instructions.
-
-## Validation and maintenance
-
-Validate canonical skills and the TypeScript package with:
+Verify all canonical skills against the Agent Skills specification and run the automated test suite:
 
 ```sh
+# Validate skill markdown, frontmatter, links, and line-length limits
 python3 scripts/validate_skills.py
+
+# Run TypeScript build and node:test suite
 npm test
+
+# Run complete validation pipeline
 npm run validate
+
+# Dry-run package artifact creation
 npm pack --dry-run
 ```
 
-Keep universal instructions small; [`global-instructions/AGENTS.md`](global-instructions/AGENTS.md) is a minimal template. Put a rule in one owning skill and refer to it elsewhere instead of copying it. Add a new skill only for a distinct workflow, keep references one level below `SKILL.md`, and inspect the final repository diff before release.
+---
 
-Skills guide agent behavior but cannot guarantee selection or compliance. Use CI builds/tests/analyzers, API contract tests, secret scanning, protected branches, required review, least-privilege credentials, deployment gates, database permissions, and sandbox/approval policy for deterministic enforcement.
+## Why I built this
+
+I created **dotnet-production-agent-skills** after repeatedly explaining the same production expectations to GitHub Copilot—then spending more tokens correcting and reworking the result. This project captures those lessons as focused, reusable guidance so coding agents can start with better context and produce safer .NET code the first time.
+
+Created and maintained by [Devi Prakash](https://github.com/dprakash2101). Contributions and practical feedback are welcome through [GitHub issues](https://github.com/dprakash2101/dotnet-production-agent-skills/issues).
+
+---
+
+## License
+
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for complete terms.
+
+Copyright (c) 2026 **Devi Prakash**.
