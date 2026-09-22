@@ -1,6 +1,6 @@
 ---
 name: google-cloud-pubsub-dotnet
-description: Implement or review Google Cloud Pub/Sub publishers and pull subscribers in .NET. Use only for Google.Cloud.PubSub.V1 messaging, subscriber workers, acknowledgement behavior, or Pub/Sub delivery concerns.
+description: Use when implementing, modifying, reviewing, or troubleshooting Google Cloud Pub/Sub publishers, subscribers, pull workers, acknowledgements, concurrency, flow control, dead-letter handling, ordering, or BackgroundService integration in .NET.
 ---
 
 # Google Cloud Pub/Sub for .NET

@@ -1,6 +1,6 @@
 ---
 name: task-router
-description: Classify a software request just enough to select a safe, proportionate workflow. Use at the start of implementation, investigation, review, testing, or Git work when the needed workflow is not already obvious.
+description: Use only when the user explicitly requests help selecting a workflow or skill for a complex software task; choose relevant skills from their descriptions without implementing a custom skill router.
 ---
 
 # Task router

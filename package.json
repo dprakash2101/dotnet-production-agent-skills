@@ -21,6 +21,7 @@
   },
   "files": [
     "dist/src",
+    "copilot",
     "skills",
     "README.md",
     "LICENSE"
@@ -49,5 +50,8 @@
     "copilot",
     "claude-code",
     "cursor"
-  ]
+  ],
+  "dependencies": {
+    "yaml": "^2.9.1"
+  }
 }

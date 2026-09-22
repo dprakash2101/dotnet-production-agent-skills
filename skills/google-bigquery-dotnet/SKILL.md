@@ -1,6 +1,6 @@
 ---
 name: google-bigquery-dotnet
-description: Implement or review Google BigQuery access from .NET with Google.Cloud.BigQuery.V2. Use only for BigQuery queries, jobs, result mapping, authentication, performance, or query-cost concerns.
+description: Use when implementing, modifying, reviewing, troubleshooting, or optimizing Google BigQuery integrations in .NET, including BigQueryClient, authentication, parameterized queries, DATE/DATETIME/TIMESTAMP types, query costs, serialization, and result mapping.
 ---
 
 # Google BigQuery for .NET

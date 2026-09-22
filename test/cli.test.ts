@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -156,7 +156,7 @@ test("help works globally and after a command without creating an installation",
   for (const args of [["--help"], ["install", "--help"]]) {
     const result = run(home, ...args);
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /Usage: dotnet-agent-skills/);
+    assert.match(result.stdout, /Usage: dotnet-production-agent-skills/);
   }
   await assert.rejects(readFile(path.join(home, ".agents", "skills", ".dotnet-agent-skills.json"), "utf8"), {
     code: "ENOENT",
@@ -192,4 +192,80 @@ test("multi-target uninstall preflights every conflict before removing any targe
   assert.match(result.stderr, /not removed/);
   assert.match(await readFile(sharedSkill, "utf8"), /name: code-quality/);
   assert.equal(await readFile(claudeSkill, "utf8"), "locally edited\n");
+});
+
+test("reinstall skips unchanged skills and updates when packaged digest changes", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-idempotent-"));
+  const fixture = await mkdtemp(path.join(repository, "package-fixture-"));
+  try {
+  await cp(path.join(repository, "skills"), path.join(fixture, "skills"), { recursive: true });
+  await cp(path.join(repository, "copilot"), path.join(fixture, "copilot"), { recursive: true });
+  await cp(path.join(repository, "dist", "src"), path.join(fixture, "dist", "src"), { recursive: true });
+  await cp(path.join(repository, "package.json"), path.join(fixture, "package.json"));
+  const fixtureCli = path.join(fixture, "dist", "src", "cli.js");
+  const execute = (...args: string[]) => spawnSync(process.execPath, [fixtureCli, ...args], {
+    cwd: repository, encoding: "utf8", env: { ...process.env, HOME: home, USERPROFILE: home },
+  });
+  assert.equal(execute("install", "--target", "shared").status, 0);
+  const repeated = execute("install", "--target", "shared");
+  assert.equal(repeated.status, 0, repeated.stderr);
+  assert.match(repeated.stdout, /skip\s+.*code-quality/);
+  assert.doesNotMatch(repeated.stdout, /replace\s+/);
+  const packagedSkill = path.join(fixture, "skills", "code-quality", "SKILL.md");
+  await writeFile(packagedSkill, `${await readFile(packagedSkill, "utf8")}\nNew packaged guidance.\n`);
+  const update = execute("update", "--target", "shared");
+  assert.equal(update.status, 0, update.stderr);
+  assert.match(update.stdout, /replace\s+.*code-quality/);
+  } finally { await rm(fixture, { recursive: true, force: true }); }
+});
+
+test("forced uninstall backs up locally modified managed skills", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-uninstall-backup-"));
+  assert.equal(run(home, "install", "--target", "shared").status, 0);
+  const edited = path.join(home, ".agents", "skills", "code-quality", "SKILL.md");
+  await writeFile(edited, "local edit\n");
+  assert.equal(run(home, "uninstall", "--target", "shared").status, 1);
+  const result = run(home, "uninstall", "--target", "shared", "--force", "--yes");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /backup\s+/);
+  const backupRoot = path.join(home, ".agents", ".dotnet-agent-skills-backups");
+  const [batch] = await readdir(backupRoot);
+  assert.equal(await readFile(path.join(backupRoot, batch!, "code-quality", "SKILL.md"), "utf8"), "local edit\n");
+});
+
+test("Copilot managed instructions preserve user text through install, update and uninstall", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-copilot-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "dotnet-agent-copilot-project-"));
+  const file = path.join(project, ".github", "copilot-instructions.md");
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, "My team rules.\n");
+  const args = ["--target", "copilot", "--project", project];
+  const dry = runAt(home, project, "install", ...args, "--dry-run");
+  assert.equal(dry.status, 0, dry.stderr);
+  assert.equal(await readFile(file, "utf8"), "My team rules.\n");
+  assert.equal(runAt(home, project, "install", ...args).status, 0);
+  const first = await readFile(file, "utf8");
+  assert.match(first, /My team rules\./);
+  assert.match(first, /dotnet-production-agent-skills:start/);
+  assert.equal(runAt(home, project, "install", ...args).status, 0);
+  assert.equal(await readFile(file, "utf8"), first);
+  await writeFile(file, first.replace("Understand the existing implementation", "Review the existing implementation"));
+  assert.equal(runAt(home, project, "update", ...args).status, 0);
+  assert.equal(await readFile(file, "utf8"), first);
+  assert.equal(runAt(home, project, "doctor", ...args, "--json").status, 0);
+  assert.equal(runAt(home, project, "uninstall", ...args).status, 0);
+  assert.equal(await readFile(file, "utf8"), "My team rules.\n");
+});
+
+test("doctor accepts multiline YAML frontmatter and rejects invalid metadata", async () => {
+  const { validateSkills } = await import("../src/skills/validation.js");
+  const root = await mkdtemp(path.join(tmpdir(), "dotnet-agent-yaml-"));
+  const good = path.join(root, "good-skill");
+  const bad = path.join(root, "bad-skill");
+  await mkdir(good);
+  await mkdir(bad);
+  await writeFile(path.join(good, "SKILL.md"), "---\nname: good-skill\ndescription: >\n  Use when creating or modifying\n  ASP.NET Core APIs.\n---\n# Body\n");
+  await writeFile(path.join(bad, "SKILL.md"), "---\nname: bad-skill\ndescription: [broken\n---\n# Body\n");
+  assert.deepEqual(await validateSkills(root, ["good-skill"]), []);
+  assert.match((await validateSkills(root, ["bad-skill"])).join(" "), /invalid YAML/);
 });

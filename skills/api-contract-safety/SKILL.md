@@ -1,6 +1,6 @@
 ---
 name: api-contract-safety
-description: Preserve and evolve ASP.NET Core API contracts safely. Use when changing routes, verbs, headers, parameters, DTOs, JSON, status/errors, enums, auth, versioning, or public interfaces.
+description: Use when changing or reviewing existing API routes, versions, verbs, headers, request/response DTOs, serialization, status codes, error shapes, authorization, or public interfaces.
 ---
 
 # API contract safety

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
 import {
   cp,
   lstat,
@@ -20,6 +19,8 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline/promises";
+import { changeInstructions, inspectInstructions } from "./copilot/instructions.js";
+import { validateSkills } from "./skills/validation.js";
 
 type Command = "install" | "update" | "list" | "doctor" | "uninstall";
 type Target = "all" | "shared" | "codex" | "copilot" | "claude" | "cursor";
@@ -70,7 +71,7 @@ const MANIFEST_NAME = ".dotnet-agent-skills.json";
 const SUPPORTED_TARGETS = new Set<Target>(["all", "shared", "codex", "copilot", "claude", "cursor"]);
 
 function usage(): string {
-  return `Usage: dotnet-agent-skills <command> [options]
+  return `Usage: dotnet-production-agent-skills <command> [options]
 
 Commands:
   install      Install canonical skills
@@ -270,23 +271,33 @@ async function moveToBackup(destination: string, name: string, target: string): 
 interface InstallPlan {
   destination: Destination;
   manifest: InstallManifest;
-  skills: { name: string; state: State; action: "install" | "replace" | "conflict" }[];
+  skills: { name: string; state: State; action: "install" | "replace" | "skip" | "conflict"; digest: string }[];
   retirements: { name: string; state: State }[];
 }
 
 async function installOrUpdate(options: Options, command: "install" | "update"): Promise<void> {
   const skills = await packagedSkills();
+  const validationErrors = await validateCanonical();
+  if (validationErrors.length) throw new Error(`invalid packaged skills: ${validationErrors.join("; ")}`);
+  if ((options.target === "copilot" || options.target === "all") && options.scope === "project") {
+    const instructions = await inspectInstructions(options.project);
+    if (instructions.state === "malformed") throw new Error(`malformed managed Copilot instructions: ${instructions.path}`);
+  }
   const packaged = new Set(skills);
   const packageJson = JSON.parse(await readFile(path.join(PACKAGE_ROOT, "package.json"), "utf8")) as { version: string };
   const destinationPlans: InstallPlan[] = [];
+  const digests = new Map(await Promise.all(skills.map(async (name) => [name, await digestDirectory(path.join(SKILLS_ROOT, name))] as const)));
 
   for (const destination of destinations(options)) {
     const manifest = await readManifest(destination.directory);
-    const plans: { name: string; state: State; action: "install" | "replace" | "conflict" }[] = [];
+    const plans: InstallPlan["skills"] = [];
     for (const name of skills) {
       const state = await currentState(destination.directory, name, manifest.skills[name]);
-      const action = state.state === "missing" ? "install" : state.state === "unchanged" ? "replace" : "conflict";
-      plans.push({ name, state, action });
+      const digest = digests.get(name)!;
+      const action = state.state === "missing" ? "install" : state.state === "unchanged"
+        ? manifest.skills[name]?.digest === digest && manifest.skills[name]?.mode === options.mode ? "skip" : "replace"
+        : "conflict";
+      plans.push({ name, state, action, digest });
     }
 
     const retirements: { name: string; state: State }[] = [];
@@ -313,6 +324,10 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
     if (!options.dryRun) await mkdir(destination.directory, { recursive: true });
 
     for (const plan of plans) {
+      if (plan.action === "skip") {
+        console.log(`skip       ${plan.state.installedPath}`);
+        continue;
+      }
       const source = path.join(SKILLS_ROOT, plan.name);
       const target = plan.state.installedPath;
       if (plan.action !== "install") {
@@ -330,7 +345,7 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
         else await cp(source, target, { recursive: true, errorOnExist: true });
       }
       manifest.skills[plan.name] = {
-        digest: await digestDirectory(source),
+        digest: plan.digest,
         mode: options.mode,
         source: options.mode === "link" ? await realpath(source) : null,
       };
@@ -357,9 +372,18 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
     manifest.target = destination.target;
     await writeManifest(destination.directory, manifest, options.dryRun);
   }
+  if ((options.target === "copilot" || options.target === "all") && options.scope === "project") {
+    const action = await changeInstructions(options.project, "install", options.dryRun);
+    console.log(`${action === "skip" ? "skip" : options.dryRun ? `would ${action}` : action} Copilot production instructions`);
+    if (!options.dryRun) console.log("Copilot CLI: /skills list | /skills reload | /skills info <skill-name>");
+  }
 }
 
 async function uninstall(options: Options): Promise<void> {
+  if ((options.target === "copilot" || options.target === "all") && options.scope === "project") {
+    const instructions = await inspectInstructions(options.project);
+    if (instructions.state === "malformed") throw new Error(`malformed managed Copilot instructions: ${instructions.path}`);
+  }
   const destinationPlans: {
     destination: Destination;
     manifest: InstallManifest;
@@ -389,7 +413,12 @@ async function uninstall(options: Options): Promise<void> {
   for (const { destination, manifest, skills: plans } of destinationPlans) {
     for (const plan of plans) {
       console.log(`${options.dryRun ? "would remove" : "remove"}   ${plan.state.installedPath}`);
-      if (!options.dryRun) await rm(plan.state.installedPath, { recursive: true, force: true });
+      if (!options.dryRun) {
+        if (plan.state.state === "modified") {
+          const backup = await moveToBackup(destination.directory, plan.name, plan.state.installedPath);
+          console.log(`backup     ${backup}`);
+        } else await rm(plan.state.installedPath, { recursive: true, force: true });
+      }
       delete manifest.skills[plan.name];
     }
     if (!options.dryRun) {
@@ -398,49 +427,45 @@ async function uninstall(options: Options): Promise<void> {
       else await writeManifest(destination.directory, manifest, false);
     }
   }
+  if ((options.target === "copilot" || options.target === "all") && options.scope === "project") {
+    const action = await changeInstructions(options.project, "uninstall", options.dryRun);
+    if (action !== "skip") console.log(`${options.dryRun ? "would remove" : "remove"} Copilot production instructions`);
+  }
 }
 
 async function inspect(options: Options): Promise<{
   packagedSkills: string[];
-  installations: (Destination & { packageVersion: string | null; skills: { name: string; state: InspectionState; mode: InstallMode | null }[] })[];
+  currentPackageVersion: string;
+  installations: (Destination & { packageVersion: string | null; packageVersionMismatch: boolean; skills: { name: string; state: InspectionState; mode: InstallMode | null; packaged: "current" | "outdated" | null }[] })[];
+  copilotInstructions?: Awaited<ReturnType<typeof inspectInstructions>>;
 }> {
   const skills = await packagedSkills();
   const packaged = new Set(skills);
+  const packageJson = JSON.parse(await readFile(path.join(PACKAGE_ROOT, "package.json"), "utf8")) as { version: string };
   const installations = [];
+  const digests = new Map(await Promise.all(skills.map(async (name) => [name, await digestDirectory(path.join(SKILLS_ROOT, name))] as const)));
   for (const destination of destinations(options)) {
     const manifest = await readManifest(destination.directory);
-    const states: { name: string; state: InspectionState; mode: InstallMode | null }[] = [];
+    const states: { name: string; state: InspectionState; mode: InstallMode | null; packaged: "current" | "outdated" | null }[] = [];
     for (const name of skills) {
       const state = await currentState(destination.directory, name, manifest.skills[name]);
-      states.push({ name, state: state.state, mode: manifest.skills[name]?.mode ?? null });
+      const record = manifest.skills[name];
+      states.push({ name, state: state.state, mode: record?.mode ?? null, packaged: record ? record.digest === digests.get(name) ? "current" : "outdated" : null });
     }
     for (const [name, record] of Object.entries(manifest.skills)) {
-      if (!packaged.has(name)) states.push({ name, state: "stale" as const, mode: record.mode });
+      if (!packaged.has(name)) states.push({ name, state: "stale" as const, mode: record.mode, packaged: null });
     }
-    installations.push({ ...destination, packageVersion: manifest.packageVersion, skills: states });
+    installations.push({ ...destination, packageVersion: manifest.packageVersion,
+      packageVersionMismatch: manifest.packageVersion !== null && manifest.packageVersion !== packageJson.version,
+      skills: states });
   }
-  return { packagedSkills: skills, installations };
+  const copilotInstructions = (options.target === "copilot" || options.target === "all") && options.scope === "project"
+    ? await inspectInstructions(options.project) : undefined;
+  return { packagedSkills: skills, currentPackageVersion: packageJson.version, installations, ...(copilotInstructions ? { copilotInstructions } : {}) };
 }
 
 async function validateCanonical(): Promise<string[]> {
-  const errors: string[] = [];
-  for (const name of await packagedSkills()) {
-    const skillFile = path.join(SKILLS_ROOT, name, "SKILL.md");
-    if (!existsSync(skillFile)) {
-      errors.push(`${name}: missing SKILL.md`);
-      continue;
-    }
-    const contents = await readFile(skillFile, "utf8");
-    const match = contents.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
-    if (!match?.[1]) errors.push(`${name}: invalid frontmatter delimiters`);
-    else {
-      const declaredName = match[1].match(/^name:\s*(.+)$/m)?.[1]?.trim();
-      const description = match[1].match(/^description:\s*(.+)$/m)?.[1]?.trim();
-      if (declaredName !== name) errors.push(`${name}: frontmatter name does not match directory`);
-      if (!description) errors.push(`${name}: missing description`);
-    }
-  }
-  return errors;
+  return validateSkills(SKILLS_ROOT, await packagedSkills());
 }
 
 function countStates(skills: readonly { state: InspectionState }[]): Record<string, number> {
@@ -472,8 +497,9 @@ async function main(): Promise<void> {
       const report = await inspect(parsed.options);
       const validationErrors = command === "doctor" ? await validateCanonical() : [];
       const unhealthy = report.installations.flatMap((entry) => entry.skills)
-        .filter((entry) => entry.state !== "unchanged");
-      const output = { ...report, validationErrors, healthy: validationErrors.length === 0 && unhealthy.length === 0 };
+        .filter((entry) => entry.state !== "unchanged" || entry.packaged === "outdated");
+      const instructionsUnhealthy = report.copilotInstructions && !["unchanged", "unmanaged"].includes(report.copilotInstructions.state);
+      const output = { ...report, validationErrors, healthy: validationErrors.length === 0 && unhealthy.length === 0 && !instructionsUnhealthy };
       if (parsed.options.json) console.log(JSON.stringify(output, null, 2));
       else {
         console.log(`Packaged skills (${report.packagedSkills.length}): ${report.packagedSkills.join(", ")}`);
@@ -481,7 +507,11 @@ async function main(): Promise<void> {
           const summary = Object.entries(countStates(installation.skills))
             .map(([key, value]) => `${key}=${value}`).join(" ");
           console.log(`${installation.target.padEnd(7)} ${installation.directory} ${summary}`);
+          if (installation.packageVersionMismatch) console.log(`  installed package version: ${installation.packageVersion}; current: ${report.currentPackageVersion}`);
+          const outdated = installation.skills.filter((skill) => skill.packaged === "outdated");
+          if (outdated.length) console.log(`  packaged updates: ${outdated.map((skill) => skill.name).join(", ")}`);
         }
+        if (report.copilotInstructions) console.log(`Copilot instructions: ${report.copilotInstructions.state} ${report.copilotInstructions.path}`);
         validationErrors.forEach((error) => console.error(`error: ${error}`));
       }
       if (command === "doctor" && !output.healthy) process.exitCode = 1;

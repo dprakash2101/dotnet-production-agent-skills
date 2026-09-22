@@ -1,6 +1,6 @@
 ---
 name: relational-database-dotnet
-description: Implement or review relational database access from .NET for PostgreSQL or Oracle. Use for ADO.NET/provider SQL, connections, transactions, commands, provider-specific mapping, or database retry decisions; compose with ef-core-safety when EF Core behavior is involved.
+description: Use when implementing, reviewing, or troubleshooting .NET PostgreSQL or Oracle SQL, ADO.NET providers, parameterized queries, connections, transactions, mapping, or database performance. Compose with ef-core-safety for EF Core.
 ---
 
 # Relational database access for .NET
