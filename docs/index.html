@@ -29,6 +29,7 @@
         <a href="#install" class="nav-link">CLI Installer</a>
         <a href="#architecture" class="nav-link">Architecture</a>
         <a href="#compatibility" class="nav-link">Compatibility</a>
+        <a href="release-notes.html" class="nav-link">Release Notes</a>
         <a href="#author" class="nav-link">Author</a>
       </nav>
 
@@ -71,6 +72,7 @@
         <div class="hero-cta">
           <a href="#skills" class="btn-primary">Browse the skills</a>
           <a href="#install" class="btn-secondary">Create an install command</a>
+          <a href="release-notes.html" class="btn-secondary">Release notes</a>
           <a href="https://github.com/dprakash2101/dotnet-production-agent-skills" target="_blank" rel="noopener noreferrer" class="btn-secondary">View on GitHub</a>
         </div>
       </div>
@@ -202,7 +204,7 @@
       <div class="container">
         <div class="section-head">
           <h2 class="section-title">Designed for less rework</h2>
-          <p class="section-subtitle">The library turns lessons from day-to-day use of coding agents into reusable, task-specific instructions.</p>
+          <p class="section-subtitle">Project-wide Copilot instructions guide every coding task. Agents select specialized skills when the request calls for them. Command guardrails are reserved for supported hooks.</p>
         </div>
 
         <div class="principles-grid">
@@ -242,7 +244,7 @@
             <div class="principle-icon">🔒</div>
             <h3 class="principle-title">State-Tracked Safety</h3>
             <p class="principle-desc">
-              The TypeScript CLI tracks file digests in <code>.dotnet-agent-skills.json</code>. It stops on manual conflicts, protects custom skills, and creates automatic backups before force overwrites.
+              The TypeScript CLI tracks file digests in <code>.dotnet-agent-skills.json</code>. Repeated installs skip unchanged skills; force operations back up locally edited skills.
             </p>
           </div>
 
@@ -262,7 +264,7 @@
       <div class="container">
         <div class="section-head">
           <h2 class="section-title">Agent compatibility</h2>
-          <p class="section-subtitle">One canonical skill library, installed into the discovery location used by each supported agent.</p>
+          <p class="section-subtitle">One canonical skill library, installed into the discovery location used by each supported agent. Copilot project installs also manage a section of repository instructions.</p>
         </div>
 
         <div style="overflow-x: auto; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color); padding: 24px;">
@@ -390,6 +392,7 @@
       </div>
       <div class="footer-links">
         <a href="https://github.com/dprakash2101/dotnet-production-agent-skills">GitHub</a>
+        <a href="release-notes.html">Release Notes</a>
         <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/blob/main/LICENSE">License</a>
         <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/issues">Issues</a>
         <a href="https://agentskills.io/specification" target="_blank" rel="noopener noreferrer">Agent Skills Spec</a>

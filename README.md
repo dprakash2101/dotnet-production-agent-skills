@@ -10,7 +10,7 @@
 
 A focused collection of `SKILL.md` guidance built to reduce repeated prompting, unnecessary token use, and avoidable rework when developing production .NET software with AI coding tools.
 
-[Browse the skills catalog](https://dprakash2101.github.io/dotnet-production-agent-skills/#skills) · [Build an install command](https://dprakash2101.github.io/dotnet-production-agent-skills/#install) · [Report an issue](https://github.com/dprakash2101/dotnet-production-agent-skills/issues)
+[Browse the skills catalog](https://dprakash2101.github.io/dotnet-production-agent-skills/#skills) · [Build an install command](https://dprakash2101.github.io/dotnet-production-agent-skills/#install) · [Release notes](RELEASE_NOTES.md) · [Report an issue](https://github.com/dprakash2101/dotnet-production-agent-skills/issues)
 
 </div>
 
@@ -36,6 +36,7 @@ A focused collection of `SKILL.md` guidance built to reduce repeated prompting, 
   - [Safety & Conflict Handling](#safety--conflict-handling)
 - [Host Compatibility](#host-compatibility)
 - [Validation & Development](#validation--development)
+- [Release Notes](#release-notes)
 - [Why I built this](#why-i-built-this)
 - [License](#license)
 
@@ -207,6 +208,7 @@ The catalog is grouped by task so agents can load only the guidance relevant to 
 | Skill | Focus & Trigger | Progressive References |
 | :--- | :--- | :--- |
 | [`distributed-workflows`](skills/distributed-workflows/SKILL.md) | Build idempotent consumers, handle partial failures, manage distributed retries, and design background workers. | — |
+| [`retry-resilience`](skills/retry-resilience/SKILL.md) | Add explicitly requested retries or review existing transient failure policies; avoid automatic retries. | — |
 | [`dotnet-security`](skills/dotnet-security/SKILL.md) | Threat-model .NET boundaries, protect against SSRF/XSS/SQLi, enforce authorization, and handle secrets safely. | — |
 | [`production-logging`](skills/production-logging/SKILL.md) | Produce structured, high-signal, sensitive-data-masked, and cost-efficient Serilog/ILogger production logs. | — |
 
@@ -395,6 +397,10 @@ npm pack --dry-run
 ```
 
 ---
+
+## Release Notes
+
+See [release notes](RELEASE_NOTES.md) or the [documentation page](https://dprakash2101.github.io/dotnet-production-agent-skills/release-notes.html) for changes, compatibility notes, and publication status.
 
 ## Why I built this
 
