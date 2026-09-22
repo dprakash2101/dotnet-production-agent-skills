@@ -10,7 +10,7 @@ window.SKILLS_DATA = [
     icon: "🧭",
     badge: "Foundation",
     description: "Classify a software request just enough to select a safe, proportionate workflow.",
-    whenToUse: "Use at the start of implementation, investigation, review, testing, or Git work when the needed workflow is not already obvious.",
+    whenToUse: "Use only when explicitly asked to choose a workflow or skill for a complex software task.",
     tags: ["routing", "planning", "workflow", "triage"],
     hasReferences: false,
     references: [],
@@ -323,6 +323,20 @@ window.SKILLS_DATA = [
     hasReferences: false,
     references: [],
     examplePrompt: "Implement an idempotent message consumer using a transaction-outbox pattern with bounded jitter retry."
+  },
+  {
+    id: "retry-resilience",
+    name: "retry-resilience",
+    category: "resilience",
+    categoryName: "Resilience & Security",
+    icon: "🔁",
+    badge: "Reliability",
+    description: "Add explicitly requested retry behavior or review an existing retry policy in .NET.",
+    whenToUse: "Use for requested retries or reviews of existing transient HTTP, database, Pub/Sub, or cloud API resilience logic. Do not introduce retries automatically.",
+    tags: ["retry", "resilience", "transient-failures", "idempotency"],
+    hasReferences: false,
+    references: [],
+    examplePrompt: "Review this existing Pub/Sub retry policy for duplicate deliveries, bounded attempts, and transient failures."
   },
   {
     id: "dotnet-security",

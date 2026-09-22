@@ -23,6 +23,7 @@
     "dist/src",
     "copilot",
     "skills",
+    "RELEASE_NOTES.md",
     "README.md",
     "LICENSE"
   ],

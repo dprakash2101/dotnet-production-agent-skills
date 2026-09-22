@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Release notes for .NET Production Agent Skills, including upcoming CLI, skill, and documentation changes.">
+  <title>Release notes — .NET Production Agent Skills</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-brand"><div class="brand-icon">.NET</div><span>.NET Agent Skills</span></a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="index.html#skills" class="nav-link">Skills Catalog</a>
+        <a href="index.html#install" class="nav-link">CLI Installer</a>
+        <a href="index.html#architecture" class="nav-link">Architecture</a>
+        <a href="release-notes.html" class="nav-link" aria-current="page">Release Notes</a>
+      </nav>
+      <div class="nav-actions">
+        <button id="theme-toggle-btn" class="theme-toggle-btn" type="button" aria-label="Switch to dark theme" aria-pressed="false">
+          <span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content" class="release-main">
+    <div class="container">
+      <div class="section-kicker">Project updates</div>
+      <h1 class="section-title">Release notes</h1>
+      <p class="section-subtitle">Changes to the installer and skill library, with publication status stated for each entry.</p>
+
+      <article class="release-entry" aria-labelledby="unreleased-title">
+        <p class="release-status">Unreleased · Proposed in <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/4">PR #4</a></p>
+        <h2 id="unreleased-title">Copilot instructions and safer skill management</h2>
+        <p>This work is not yet published to npm. The current package version remains <code>0.1.1</code> until a release is prepared.</p>
+
+        <h3>New</h3>
+        <ul>
+          <li>Project-scope Copilot installs manage an always-on section in <code>.github/copilot-instructions.md</code>, preserving team-written instructions outside its markers.</li>
+          <li>A <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/blob/main/skills/retry-resilience/SKILL.md">retry-resilience</a> skill guides requested retries and reviews of existing resilience logic.</li>
+          <li>A separate hooks interface prepares for future command guardrails; this update does not install hooks.</li>
+        </ul>
+
+        <h3>Improved</h3>
+        <ul>
+          <li>Repeated installs skip unchanged skills. Updated packaged skills replace unchanged installed copies.</li>
+          <li>Forced uninstall backs up locally edited managed skills and reports the backup location.</li>
+          <li><code>doctor</code> validates YAML frontmatter, including multiline descriptions, and reports installation and Copilot instruction health.</li>
+          <li>Skill descriptions make task-specific selection clearer, and Copilot installs show discovery commands.</li>
+        </ul>
+
+        <h3>Upgrade notes</h3>
+        <ul>
+          <li>Existing targets, scopes, copy/link modes, and CLI flags remain supported.</li>
+          <li>Copilot instructions apply to project installs only. User-scope installs continue to place skills in <code>~/.copilot/skills</code>.</li>
+          <li>The CLI now uses the <code>yaml</code> npm dependency for frontmatter validation.</li>
+        </ul>
+        <p class="release-verification">Validation: 30 skills checked and 14 CLI tests passed with <code>npm run validate</code>.</p>
+      </article>
+      <p><a href="https://github.com/dprakash2101/dotnet-production-agent-skills/blob/main/RELEASE_NOTES.md">Read the repository release notes</a></p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-credits">Created &amp; maintained by <strong>Devi Prakash</strong>. Released under the MIT License.</div>
+      <div class="footer-links"><a href="index.html">Home</a><a href="https://github.com/dprakash2101/dotnet-production-agent-skills">GitHub</a><a href="https://github.com/dprakash2101/dotnet-production-agent-skills/issues">Issues</a></div>
+    </div>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
