@@ -1,6 +1,6 @@
 ---
 name: production-logging
-description: Design or review structured .NET logging for production and high-volume APIs. Use when adding/changing logs, defining logging ownership, reducing noise/cost, or protecting sensitive observability data.
+description: Use when adding, reviewing, or reducing .NET structured logs, exception telemetry, correlation IDs, sensitive-data exposure, or high-traffic API logging costs.
 ---
 
 # Production logging for .NET

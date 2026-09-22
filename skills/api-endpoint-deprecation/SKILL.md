@@ -1,6 +1,6 @@
 ---
 name: api-endpoint-deprecation
-description: Plan, implement, or review deprecation and eventual removal of a customer-facing API endpoint. Use for endpoint replacement, version retirement, deprecation metadata, migration windows, usage verification, or explicit removal work.
+description: Use when planning, implementing, or reviewing API deprecation, replacement versions, sunset headers, migration windows, consumer verification, or endpoint removal.
 ---
 
 # Safe API endpoint deprecation

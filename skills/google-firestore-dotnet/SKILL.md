@@ -1,6 +1,6 @@
 ---
 name: google-firestore-dotnet
-description: Implement or review Google Cloud Firestore persistence in .NET. Use only for Google.Cloud.Firestore document models, reads/writes, queries, transactions, batches, indexes, or Firestore cost/modeling decisions.
+description: Use when implementing, reviewing, or troubleshooting .NET Firestore document models, queries, transactions, batched writes, indexes, optimistic concurrency, or read/write costs.
 ---
 
 # Google Cloud Firestore for .NET

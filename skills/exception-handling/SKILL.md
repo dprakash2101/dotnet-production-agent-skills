@@ -1,6 +1,6 @@
 ---
 name: exception-handling
-description: Design or review .NET exception handling, including catch boundaries, recovery, translation, cancellation, and logging ownership. Use when adding or changing exception paths or centralized handlers; load the API reference only for customer-facing HTTP boundaries.
+description: Use when implementing, modifying, or reviewing .NET exception handling, customer-facing API error translation, recovery boundaries, cancellation, and safe logging. Prevent internal details and secrets from reaching callers.
 ---
 
 # .NET exception handling

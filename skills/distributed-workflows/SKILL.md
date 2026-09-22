@@ -1,6 +1,6 @@
 ---
 name: distributed-workflows
-description: Design or change .NET message handlers, background services, retries, idempotent operations, and multi-system workflows. Use when work crosses process/service boundaries or can execute more than once.
+description: Use when designing or changing .NET message handlers, background workers, idempotency, duplicate delivery, partial failures, or existing retry behavior. Introduce new retries only when requested or required by existing architecture.
 ---
 
 # Distributed workflows

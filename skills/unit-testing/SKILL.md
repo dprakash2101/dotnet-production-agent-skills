@@ -1,6 +1,6 @@
 ---
 name: unit-testing
-description: Add or improve focused automated tests for production .NET behavior. Use for new or materially changed testable business logic and regression fixes; optional for explicitly identified POCs.
+description: Use when adding or improving focused .NET unit tests for changed business behavior or regression fixes. Prefer parameterized cases and avoid trivial redundant tests that increase CI time.
 ---
 
 # .NET unit testing

@@ -1,6 +1,6 @@
 ---
 name: aspnet-core-api-development
-description: Create a new customer-facing ASP.NET Core API endpoint or API surface. Use for new controllers/minimal endpoints and their request, validation, service, integration, response, and OpenAPI flow; not for small changes to an existing endpoint.
+description: Use when building a new ASP.NET Core customer-facing API endpoint or version, including routing, header and request validation, service boundaries, authorization, error responses, and OpenAPI. Use api-contract-safety when modifying an existing contract.
 ---
 
 # New customer-facing ASP.NET Core APIs

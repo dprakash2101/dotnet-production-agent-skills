@@ -1,6 +1,6 @@
 ---
 name: code-quality
-description: Improve or assess quality of changed C#/.NET code under Clean-as-You-Code and analyzer/Sonar expectations. Use for requested quality work or while polishing a substantive implementation; do not trigger repository-wide legacy cleanup.
+description: Use when improving or reviewing modified .NET code for SonarCloud/Roslyn findings, duplication, complexity, maintainability, or existing helper reuse. Avoid unrelated legacy cleanup.
 ---
 
 # .NET code quality

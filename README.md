@@ -277,10 +277,32 @@ External consumers are never assumed absent just because no internal repository 
 
 ## TypeScript CLI Reference
 
-The installer CLI is written in TypeScript and compiles to dependency-free Node.js ESM (requiring Node.js >= 18).
+### How guidance is applied
+
+| Concern | Mechanism | When it applies |
+| :--- | :--- | :--- |
+| Universal engineering rules | Managed section in project `.github/copilot-instructions.md` | Every Copilot coding task in that project |
+| Specialized .NET knowledge | Individual `SKILL.md` files | The coding agent selects relevant skills from their descriptions and the request |
+| Deterministic command enforcement | Optional host hooks/guardrails | Only when a supported host integration and policy are explicitly enabled |
+
+The CLI installs and manages guidance; it does not route prompts or load every skill for every task. Clear skill descriptions help the coding agent select relevant knowledge. Universal rules belong in repository instructions. Command blocking belongs in host-supported hooks. Hook installation is currently an extension point in `src/copilot/hooks.ts`; no command hook is installed because a portable supported Copilot hook configuration has not been established.
+
+Copilot project installs manage only the text between `<!-- dotnet-production-agent-skills:start -->` and `<!-- dotnet-production-agent-skills:end -->`. Existing team instructions outside those markers remain intact. Uninstall removes only the managed section. User-scope Copilot installs install skills into `~/.copilot/skills`; repository instructions apply only to project scope.
+
+```sh
+dotnet-production-agent-skills install --target copilot --scope project
+dotnet-production-agent-skills install --target copilot --scope user
+dotnet-production-agent-skills update --target copilot --scope project
+dotnet-production-agent-skills doctor --target copilot --scope project
+dotnet-production-agent-skills list --target copilot --scope project
+```
+
+`--mode copy` installs portable snapshots, while `--mode link` creates links to the installed npm package and depends on that package remaining at the same location. Use `--dry-run` to preview changes without writing. Repeated installs skip unchanged snapshots; updates replace snapshots only when the packaged skill changes. Forced replacement or removal backs up locally modified skills.
+
+The installer CLI is written in TypeScript and compiles to Node.js ESM (requiring Node.js >= 18). The runtime uses the small `yaml` dependency to validate skill metadata.
 
 ```text
-dotnet-agent-skills <command> [options]
+dotnet-production-agent-skills <command> [options]
 
 Commands:
   install      Install canonical skills into agent discovery paths
