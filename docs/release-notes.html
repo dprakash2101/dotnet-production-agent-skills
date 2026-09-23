@@ -38,7 +38,7 @@
         <h3>New</h3>
         <ul>
           <li>The <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/blob/feat/redis-dotnet-skill/skills/redis-dotnet/SKILL.md">redis-dotnet</a> skill covers key design, TTLs, invalidation, concurrent misses, failure handling, and targeted checks for .NET and ASP.NET Core.</li>
-          <li>Tokens and secret keys must never be stored as plaintext Redis values. When credential caching is necessary, the guidance calls for reusing a vetted encryption helper and keeping encryption keys outside Redis.</li>
+          <li>Tokens and secret keys must never be stored as plaintext Redis values. Credential encryption binds the cache key, trusted tenant/account, and purpose as authenticated context; substitution across keys, tenants, or purposes must fail closed.</li>
           <li>The new skill appears in the README and interactive catalog.</li>
         </ul>
       </article>
