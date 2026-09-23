@@ -311,6 +311,20 @@ window.SKILLS_DATA = [
     examplePrompt: "Model a nested UserProfile document in Firestore with optimistic concurrency check using Precondition.LastUpdateTime."
   },
   {
+    id: "redis-dotnet",
+    name: "redis-dotnet",
+    category: "cloud-db",
+    categoryName: "Cloud & Database Engineering",
+    icon: "⚡",
+    badge: "Cache",
+    description: "Implement or review secure Redis caching in .NET and ASP.NET Core.",
+    whenToUse: "Use for StackExchange.Redis or IDistributedCache key design, TTLs, invalidation, performance, failure handling, or caching tokens and secrets.",
+    tags: ["redis", "cache", "dotnet", "ttl", "encryption", "tokens"],
+    hasReferences: false,
+    references: [],
+    examplePrompt: "Cache an OAuth access token in Redis with a safe TTL, reuse our encryption helper, and verify no plaintext credential is stored."
+  },
+  {
     id: "distributed-workflows",
     name: "distributed-workflows",
     category: "resilience",
