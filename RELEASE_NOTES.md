@@ -7,7 +7,7 @@ Proposed in [PR #6](https://github.com/dprakash2101/dotnet-production-agent-skil
 ### New
 
 - Added `redis-dotnet` guidance for .NET and ASP.NET Core Redis caching: key design, expiration, invalidation, concurrency, failure handling, and targeted validation.
-- The skill prohibits storing access tokens, refresh tokens, API keys, secret keys, passwords, or other credentials as plaintext Redis values. It directs agents to reuse an existing vetted encryption helper when caching a credential is necessary, with encryption keys kept outside Redis.
+- The skill prohibits plaintext credentials in Redis. Credential ciphertext must be bound to the cache key, trusted tenant/account, and credential purpose using authenticated associated data or equivalent purpose isolation, with encryption keys outside Redis. Tests must reject ciphertext copied to another key, tenant/account, or purpose.
 - Added the skill to the README and website catalog.
 
 ## v0.2.0 — Copilot instructions and safer skill management
