@@ -1,5 +1,19 @@
 # Release notes
 
+## Unreleased — Multi-agent hooks and Antigravity
+
+### New
+
+- Added `antigravity` as a first-class CLI target using `.agents/skills` and native project hooks in `.agents/hooks.json`.
+- Project installs can now configure command guardrails for Codex, GitHub Copilot, Claude Code, Cursor, and Google Antigravity. `--target all --scope project` installs all five adapters.
+- Added a shared, dependency-free guard script that blocks force-push, destructive Git operations, broad recursive deletion, and direct access to common credential-bearing files.
+- `list` and `doctor` report each project hook installation. Updates are idempotent, unrelated existing hook entries are preserved, and uninstall removes only package-managed entries.
+
+### Compatibility
+
+- Existing targets, scopes, copy/link modes, dry runs, conflict handling, and managed Copilot instructions remain supported.
+- Hooks are installed only for project scope. User-scope behavior is unchanged.
+
 ## Unreleased — Redis caching skill
 
 Proposed in [PR #6](https://github.com/dprakash2101/dotnet-production-agent-skills/pull/6); this change is not yet published to npm.

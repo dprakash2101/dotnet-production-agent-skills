@@ -21,6 +21,7 @@
   },
   "files": [
     "dist/src",
+    "hooks",
     "copilot",
     "skills",
     "RELEASE_NOTES.md",
@@ -50,7 +51,8 @@
     "codex",
     "copilot",
     "claude-code",
-    "cursor"
+    "cursor",
+    "antigravity"
   ],
   "dependencies": {
     "yaml": "^2.9.1"

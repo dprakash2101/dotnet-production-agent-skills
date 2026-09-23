@@ -102,6 +102,7 @@
                   <option value="copilot">GitHub Copilot</option>
                   <option value="claude">Claude Code</option>
                   <option value="cursor">Cursor</option>
+                  <option value="antigravity">Google Antigravity</option>
                   <option value="shared">Shared portable location</option>
                 </select>
               </fieldset>
@@ -300,12 +301,19 @@
                 <td style="padding: 12px 16px;"><code>&lt;repo&gt;/.claude/skills</code></td>
                 <td style="padding: 12px 16px;"><span class="tag-badge">Copy / Symlink</span></td>
               </tr>
-              <tr>
+              <tr style="border-bottom: 1px solid var(--border-color);">
                 <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary);">Cursor</td>
                 <td style="padding: 12px 16px;">Agent Skills</td>
                 <td style="padding: 12px 16px;"><code>~/.cursor/skills</code> or <code>.agents</code></td>
                 <td style="padding: 12px 16px;"><code>&lt;repo&gt;/.cursor/skills</code></td>
                 <td style="padding: 12px 16px;"><span class="tag-badge">Copy / Symlink</span></td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 16px; font-weight: 600; color: var(--text-primary);">Google Antigravity</td>
+                <td style="padding: 12px 16px;">Agent Skills + Hooks</td>
+                <td style="padding: 12px 16px;"><code>~/.agents/skills</code></td>
+                <td style="padding: 12px 16px;"><code>&lt;repo&gt;/.agents/skills</code></td>
+                <td style="padding: 12px 16px;"><span class="tag-badge">Copy / Symlink + Hook</span></td>
               </tr>
             </tbody>
           </table>

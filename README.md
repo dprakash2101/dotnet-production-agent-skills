@@ -59,7 +59,8 @@ skills/ (canonical portable Agent Skills)
          ├── Codex         →  .agents/skills
          ├── GitHub Copilot →  .github/skills | .copilot/skills
          ├── Claude Code   →  .claude/skills
-         └── Cursor        →  .cursor/skills | .agents/skills
+         ├── Cursor        →  .cursor/skills | .agents/skills
+         └── Antigravity   →  .agents/skills + .agents/hooks.json
 ```
 
 ### Core Engineering Invariant
@@ -286,9 +287,11 @@ External consumers are never assumed absent just because no internal repository 
 | :--- | :--- | :--- |
 | Universal engineering rules | Managed section in project `.github/copilot-instructions.md` | Every Copilot coding task in that project |
 | Specialized .NET knowledge | Individual `SKILL.md` files | The coding agent selects relevant skills from their descriptions and the request |
-| Deterministic command enforcement | Optional host hooks/guardrails | Only when a supported host integration and policy are explicitly enabled |
+| Deterministic command enforcement | Project hooks/guardrails | Installed for Codex, Copilot, Claude Code, Cursor, and Antigravity in project scope |
 
-The CLI installs and manages guidance; it does not route prompts or load every skill for every task. Clear skill descriptions help the coding agent select relevant knowledge. Universal rules belong in repository instructions. Command blocking belongs in host-supported hooks. Hook installation is currently an extension point in `src/copilot/hooks.ts`; no command hook is installed because a portable supported Copilot hook configuration has not been established.
+The CLI installs and manages guidance; it does not route prompts or load every skill for every task. Clear skill descriptions help the coding agent select relevant knowledge. Universal rules belong in repository instructions. Command blocking belongs in host-supported hooks. Project installs now configure native hooks for every supported coding agent using one shared, dependency-free guard script. Existing unrelated hook entries are preserved.
+
+The initial policy blocks force-push, destructive Git reset/clean/branch deletion, broad recursive deletion, and direct access to common credential-bearing files. Safe commands continue normally. Host configuration is written to `.codex/hooks.json`, `.github/hooks/dotnet-production-agent-skills.json`, `.claude/settings.json`, `.cursor/hooks.json`, or `.agents/hooks.json` for Antigravity.
 
 Copilot project installs manage only the text between `<!-- dotnet-production-agent-skills:start -->` and `<!-- dotnet-production-agent-skills:end -->`. Existing team instructions outside those markers remain intact. Uninstall removes only the managed section. User-scope Copilot installs install skills into `~/.copilot/skills`; repository instructions apply only to project scope.
 
@@ -319,7 +322,7 @@ Commands:
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--target <host>` | Target agent: `all`, `shared`, `codex`, `copilot`, `claude`, `cursor` | `all` |
+| `--target <host>` | Target agent: `all`, `shared`, `codex`, `copilot`, `claude`, `cursor`, `antigravity` | `all` |
 | `--scope <scope>` | Installation scope: `user` (home dir) or `project` (repository dir) | `user` |
 | `--project <path>`| Explicit path to repository root (forces `--scope project`) | Current dir |
 | `--mode <mode>`   | Installation mode: `copy` (portable) or `link` (symlinks) | `copy` |
@@ -336,6 +339,7 @@ Commands:
 | `copilot` | `~/.copilot/skills` | `<project>/.github/skills` |
 | `claude` | `~/.claude/skills` | `<project>/.claude/skills` |
 | `cursor` | `~/.cursor/skills` | `<project>/.cursor/skills` |
+| `antigravity` | `~/.agents/skills` | `<project>/.agents/skills` |
 | `all` | `~/.agents/skills` + `~/.claude/skills` | `<project>/.agents/skills` + `<project>/.claude/skills` |
 
 ### Safety & Conflict Handling
@@ -355,6 +359,7 @@ Commands:
 | **GitHub Copilot** | `.github/skills`, `.agents/skills` | Installs to `.github/skills` (project) or `.copilot/skills` (user) | Surface capabilities vary across VS Code, Visual Studio, and JetBrains. |
 | **Claude Code** | Portable `SKILL.md` in `.claude/skills` | Direct copy or symlink into `.claude/skills` | Supports project & user scopes. Committed project skills recommended for team consistency. |
 | **Cursor** | `.cursor/skills` and `.agents/skills` | Installs to `.cursor/skills` or shared `.agents/skills` | Auto-detects compatible `.agents/skills` layouts. |
+| **Google Antigravity** | `.agents/skills` and `.agents/hooks.json` | Uses shared skills plus a native project hook adapter | Works across Antigravity 2.0, CLI, and IDE workspace customization. |
 
 ---
 
