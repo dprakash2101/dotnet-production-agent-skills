@@ -376,7 +376,7 @@ GitHub Actions publishes the package from [`.github/workflows/publish-npm.yml`](
    - **Workflow dispatch**: choose `keep` to publish the current `package.json` version as-is, or `patch` / `minor` / `major` / `prerelease` to bump first. Optionally override the npm dist-tag, and optionally commit/tag changes back to the branch before publish.
 3. Dist-tags default from the version (`latest` for stable, `beta` / `next` / `alpha` / `rc` for matching prereleases) unless you override them on dispatch.
 
-`package.json` is the version source of truth. If `package-lock.json` root version drifts, the workflow aligns the lockfile to `package.json` (or the release tag) without inventing a new semver. `keep` does not bump; it only publishes the current version (after any lock sync). Republishing a version that already exists on npm is still rejected.
+For GitHub release events, the semver release tag is authoritative and both package files are aligned to it before the npm availability check. For manual workflow runs, `package.json` remains the version source of truth. If `package-lock.json` drifts, the workflow aligns it without inventing another semver. `keep` does not bump; it only publishes the current version after lock synchronization. Republishing the resolved version is still rejected.
 
 Successful publishes are recorded under the repository **npm** environment (Deployments on the GitHub repo page) and link to the published package version on npmjs.com.
 

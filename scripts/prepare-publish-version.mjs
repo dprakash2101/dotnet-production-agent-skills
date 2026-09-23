@@ -60,8 +60,9 @@ function npmVersion(args) {
 }
 
 /**
- * package.json is the source of truth. If package-lock.json root / "" package
- * version drifts, align it to the publish version without a semver bump.
+ * The release tag is the source of truth for release events. package.json is
+ * the source of truth only for workflow_dispatch. Align package-lock.json to
+ * the resolved publish version without an additional semver bump.
  */
 function syncLockfile(version) {
   if (!existsSync(PACKAGE_LOCK)) return false;

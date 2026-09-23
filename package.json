@@ -1,6 +1,6 @@
 {
   "name": "dotnet-production-agent-skills",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Portable production .NET engineering skills for coding agents",
   "license": "MIT",
   "author": {
@@ -37,7 +37,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test dist/test/cli.test.js",
+    "test": "npm run build && node --test dist/test/cli.test.js scripts/*.test.mjs",
     "validate": "python3 scripts/validate_skills.py && npm test",
     "prepack": "npm run build"
   },

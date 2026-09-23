@@ -1,6 +1,6 @@
 # Release notes
 
-## Unreleased — Multi-agent hooks and Antigravity
+## v0.3.0 — Multi-agent hooks and Antigravity
 
 ### New
 
@@ -13,6 +13,11 @@
 
 - Existing targets, scopes, copy/link modes, dry runs, conflict handling, and managed Copilot instructions remain supported.
 - Hooks are installed only for project scope. User-scope behavior is unchanged.
+
+### Release pipeline
+
+- GitHub release tags are authoritative for release-triggered npm publishes. A `v0.3.0` release aligns both package files to `0.3.0` before checking npm availability or publishing, even when the tagged commit still contains an already-published version.
+- The workflow now fails early if the resolved tag version and `package.json` ever disagree, preventing an old package version from being checked or published accidentally.
 
 ## Unreleased — Redis caching skill
 

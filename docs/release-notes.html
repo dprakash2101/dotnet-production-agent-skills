@@ -33,7 +33,7 @@
       <p class="section-subtitle">Changes to the installer and skill library, with publication status stated for each entry.</p>
 
       <article class="release-entry" aria-labelledby="hooks-title">
-        <p class="release-status">Unreleased · Not yet published to npm</p>
+        <p class="release-status">v0.3.0 · Prepared for npm publication</p>
         <h2 id="hooks-title">Multi-agent hooks and Antigravity</h2>
         <h3>New</h3>
         <ul>
@@ -41,6 +41,7 @@
           <li>Project installs support deterministic command guardrails for Codex, GitHub Copilot, Claude Code, Cursor, and Google Antigravity.</li>
           <li>The shared guard blocks force-push, destructive Git operations, broad recursive deletion, and direct access to common credential-bearing files.</li>
           <li><code>doctor</code> reports hook health; updates preserve unrelated hooks and uninstall removes only managed entries.</li>
+          <li>Release-triggered publishing treats the GitHub release tag as authoritative and verifies it matches <code>package.json</code> before checking or publishing to npm.</li>
         </ul>
       </article>
 
