@@ -202,6 +202,7 @@ The catalog is grouped by task so agents can load only the guidance relevant to 
 | [`google-cloud-pubsub-dotnet`](skills/google-cloud-pubsub-dotnet/SKILL.md) | Implement robust Google Cloud Pub/Sub publishers and pull subscribers with proper ack/nack semantics. | [client-patterns](skills/google-cloud-pubsub-dotnet/references/client-patterns.md) |
 | [`google-bigquery-dotnet`](skills/google-bigquery-dotnet/SKILL.md) | Query BigQuery with parameterization, pagination, streaming buffers, and strict query-cost awareness. | [query-safety](skills/google-bigquery-dotnet/references/query-safety.md) |
 | [`google-firestore-dotnet`](skills/google-firestore-dotnet/SKILL.md) | Model Firestore documents, transactions, and batched writes with concurrency and read-cost awareness. | — |
+| [`redis-dotnet`](skills/redis-dotnet/SKILL.md) | Design secure .NET Redis caches, expiration, invalidation, and token protection. | — |
 
 ### 6. ⚡ Distributed Resilience & Security
 

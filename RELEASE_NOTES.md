@@ -1,5 +1,15 @@
 # Release notes
 
+## Unreleased — Redis caching skill
+
+Proposed in [PR #6](https://github.com/dprakash2101/dotnet-production-agent-skills/pull/6); this change is not yet published to npm.
+
+### New
+
+- Added `redis-dotnet` guidance for .NET and ASP.NET Core Redis caching: key design, expiration, invalidation, concurrency, failure handling, and targeted validation.
+- The skill prohibits plaintext credentials in Redis. Credential ciphertext must be bound to the cache key, trusted tenant/account, and credential purpose using authenticated associated data or equivalent purpose isolation, with encryption keys outside Redis. Tests must reject ciphertext copied to another key, tenant/account, or purpose.
+- Added the skill to the README and website catalog.
+
 ## v0.2.0 — Copilot instructions and safer skill management
 
 The implementation was merged in [PR #4](https://github.com/dprakash2101/dotnet-production-agent-skills/pull/4) and published as [`dotnet-production-agent-skills@0.2.0`](https://www.npmjs.com/package/dotnet-production-agent-skills/v/0.2.0). These notes document that release; the release notes page is a follow-up documentation change.

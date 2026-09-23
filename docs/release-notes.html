@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Release notes for .NET Production Agent Skills v0.2.0, including CLI, skill, and documentation changes.">
+  <meta name="description" content="Release notes for .NET Production Agent Skills, including unreleased Redis caching guidance and the published v0.2.0 changes.">
   <title>Release notes — .NET Production Agent Skills</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -32,9 +32,20 @@
       <h1 class="section-title">Release notes</h1>
       <p class="section-subtitle">Changes to the installer and skill library, with publication status stated for each entry.</p>
 
-      <article class="release-entry" aria-labelledby="unreleased-title">
+      <article class="release-entry" aria-labelledby="redis-title">
+        <p class="release-status">Unreleased · Proposed in <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/6">PR #6</a> · Not yet published to npm</p>
+        <h2 id="redis-title">Redis caching skill</h2>
+        <h3>New</h3>
+        <ul>
+          <li>The <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/blob/feat/redis-dotnet-skill/skills/redis-dotnet/SKILL.md">redis-dotnet</a> skill covers key design, TTLs, invalidation, concurrent misses, failure handling, and targeted checks for .NET and ASP.NET Core.</li>
+          <li>Tokens and secret keys must never be stored as plaintext Redis values. Credential encryption binds the cache key, trusted tenant/account, and purpose as authenticated context; substitution across keys, tenants, or purposes must fail closed.</li>
+          <li>The new skill appears in the README and interactive catalog.</li>
+        </ul>
+      </article>
+
+      <article class="release-entry" aria-labelledby="v020-title">
         <p class="release-status"><a href="https://www.npmjs.com/package/dotnet-production-agent-skills/v/0.2.0">v0.2.0 on npm</a> · Implementation in <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/4">PR #4</a></p>
-        <h2 id="unreleased-title">Copilot instructions and safer skill management</h2>
+        <h2 id="v020-title">Copilot instructions and safer skill management</h2>
         <p>Version <code>0.2.0</code> is published to npm. This page documents the CLI and skill changes included in that release.</p>
 
         <h3>New</h3>
