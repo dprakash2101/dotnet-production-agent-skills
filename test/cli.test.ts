@@ -257,6 +257,96 @@ test("Copilot managed instructions preserve user text through install, update an
   assert.equal(await readFile(file, "utf8"), "My team rules.\n");
 });
 
+test("project all installs native hooks for every coding agent and Antigravity skills", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-hooks-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "dotnet-agent-hooks-project-"));
+  const result = runAt(home, project, "install", "--target", "all", "--project", project);
+  assert.equal(result.status, 0, result.stderr);
+  const configs = [
+    ".codex/hooks.json",
+    ".github/hooks/dotnet-production-agent-skills.json",
+    ".claude/settings.json",
+    ".cursor/hooks.json",
+    ".agents/hooks.json",
+  ];
+  for (const config of configs) assert.match(await readFile(path.join(project, config), "utf8"), /guard\.mjs/);
+  assert.match(await readFile(path.join(project, ".agents", "skills", "code-quality", "SKILL.md"), "utf8"), /name: code-quality/);
+  const doctor = runAt(home, project, "doctor", "--target", "all", "--project", project, "--json");
+  assert.equal(doctor.status, 0, doctor.stderr);
+  const report = JSON.parse(doctor.stdout) as { hooks: { target: string; state: string }[] };
+  assert.deepEqual(report.hooks.map((hook) => hook.target), ["codex", "copilot", "claude", "cursor", "antigravity"]);
+  assert.ok(report.hooks.every((hook) => hook.state === "unchanged"));
+});
+
+test("hook install preserves unrelated host hooks and uninstall removes only managed entries", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-hook-merge-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "dotnet-agent-hook-merge-project-"));
+  const config = path.join(project, ".cursor", "hooks.json");
+  await mkdir(path.dirname(config), { recursive: true });
+  await writeFile(config, `${JSON.stringify({ version: 1, hooks: { afterFileEdit: [{ command: "custom-format" }] } }, null, 2)}\n`);
+  const args = ["--target", "cursor", "--project", project];
+  assert.equal(runAt(home, project, "install", ...args).status, 0);
+  let installed = await readFile(config, "utf8");
+  assert.match(installed, /custom-format/);
+  assert.match(installed, /guard\.mjs cursor/);
+  assert.equal(runAt(home, project, "uninstall", ...args).status, 0);
+  installed = await readFile(config, "utf8");
+  assert.match(installed, /custom-format/);
+  assert.doesNotMatch(installed, /guard\.mjs/);
+});
+
+test("project hook dry-run creates no hook files", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-hook-dry-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "dotnet-agent-hook-dry-project-"));
+  const result = runAt(home, project, "install", "--target", "antigravity", "--project", project, "--dry-run");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /would install antigravity project hooks/);
+  await assert.rejects(readFile(path.join(project, ".agents", "hooks.json"), "utf8"), { code: "ENOENT" });
+  await assert.rejects(readFile(path.join(project, ".agent-guardrails", "guard.mjs"), "utf8"), { code: "ENOENT" });
+});
+
+test("all-target uninstall removes every managed hook configuration and shared script", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-hook-uninstall-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "dotnet-agent-hook-uninstall-project-"));
+  const args = ["--target", "all", "--project", project];
+  assert.equal(runAt(home, project, "install", ...args).status, 0);
+  assert.equal(runAt(home, project, "uninstall", ...args).status, 0);
+  for (const config of [
+    ".codex/hooks.json",
+    ".github/hooks/dotnet-production-agent-skills.json",
+    ".claude/settings.json",
+    ".cursor/hooks.json",
+    ".agents/hooks.json",
+  ]) {
+    const content = await readFile(path.join(project, config), "utf8").catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return "";
+      throw error;
+    });
+    assert.doesNotMatch(content, /guard\.mjs|dotnet-production-agent-skills/);
+  }
+  await assert.rejects(readFile(path.join(project, ".agent-guardrails", "guard.mjs"), "utf8"), { code: "ENOENT" });
+});
+
+test("guardrail blocks destructive commands and sensitive files for every host", async () => {
+  const guard = path.join(repository, "hooks", "guard.mjs");
+  const cases = [
+    ["codex", { tool_name: "Bash", tool_input: { command: "git push --force origin main" } }],
+    ["copilot", { toolName: "bash", toolArgs: { command: "git reset --hard" } }],
+    ["claude", { tool_name: "Read", tool_input: { file_path: "/repo/.env" } }],
+    ["cursor", { tool_name: "Shell", tool_input: { command: "git clean -fd" } }],
+    ["antigravity", { toolCall: { name: "run_command", args: { CommandLine: "rm -rf /" } } }],
+  ] as const;
+  for (const [host, payload] of cases) {
+    const blocked = spawnSync(process.execPath, [guard, host], { input: JSON.stringify(payload), encoding: "utf8" });
+    assert.equal(blocked.status, 0, blocked.stderr);
+    assert.match(blocked.stdout, /deny/);
+  }
+  const allowed = spawnSync(process.execPath, [guard, "antigravity"], {
+    input: JSON.stringify({ toolCall: { name: "run_command", args: { CommandLine: "dotnet test" } } }), encoding: "utf8",
+  });
+  assert.match(allowed.stdout, /allow/);
+});
+
 test("doctor accepts multiline YAML frontmatter and rejects invalid metadata", async () => {
   const { validateSkills } = await import("../src/skills/validation.js");
   const root = await mkdtemp(path.join(tmpdir(), "dotnet-agent-yaml-"));

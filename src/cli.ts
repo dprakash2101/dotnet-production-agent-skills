@@ -20,10 +20,11 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline/promises";
 import { changeInstructions, inspectInstructions } from "./copilot/instructions.js";
+import { changeHooks, hookTargets, inspectHooks, removeSharedHookScript, type HookState } from "./hooks.js";
 import { validateSkills } from "./skills/validation.js";
 
 type Command = "install" | "update" | "list" | "doctor" | "uninstall";
-type Target = "all" | "shared" | "codex" | "copilot" | "claude" | "cursor";
+type Target = "all" | "shared" | "codex" | "copilot" | "claude" | "cursor" | "antigravity";
 type Scope = "user" | "project";
 type InstallMode = "copy" | "link";
 type InstallationState = "missing" | "unmanaged" | "unchanged" | "modified";
@@ -68,7 +69,7 @@ interface State {
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SKILLS_ROOT = path.join(PACKAGE_ROOT, "skills");
 const MANIFEST_NAME = ".dotnet-agent-skills.json";
-const SUPPORTED_TARGETS = new Set<Target>(["all", "shared", "codex", "copilot", "claude", "cursor"]);
+const SUPPORTED_TARGETS = new Set<Target>(["all", "shared", "codex", "copilot", "claude", "cursor", "antigravity"]);
 
 function usage(): string {
   return `Usage: dotnet-production-agent-skills <command> [options]
@@ -81,7 +82,8 @@ Commands:
   uninstall    Remove only skills tracked by this package
 
 Options:
-  --target <all|shared|codex|copilot|claude|cursor>  Default: all
+  --target <all|shared|codex|copilot|claude|cursor|antigravity>
+                                                      Default: all
   --scope <user|project>                             Default: user
   --project <path>                                   Project root; implies project scope
   --mode <copy|link>                                 Default: copy
@@ -91,8 +93,9 @@ Options:
   --json                                             JSON output for list/doctor
   -h, --help                                         Show help
 
-For --target all, one shared .agents/skills installation serves Codex, Copilot,
-and Cursor; a second .claude/skills installation serves Claude Code.`;
+For --target all, one shared .agents/skills installation serves compatible agents,
+a second .claude/skills installation serves Claude Code, and project scope installs
+native command-guardrail hooks for Codex, Copilot, Claude, Cursor, and Antigravity.`;
 }
 
 function requireValue(argv: readonly string[], index: number, option: string): string {
@@ -150,6 +153,7 @@ function destinations(options: Options): Destination[] {
         copilot: ".copilot/skills",
         claude: ".claude/skills",
         cursor: ".cursor/skills",
+        antigravity: ".agents/skills",
       }
     : {
         shared: ".agents/skills",
@@ -157,6 +161,7 @@ function destinations(options: Options): Destination[] {
         copilot: ".github/skills",
         claude: ".claude/skills",
         cursor: ".cursor/skills",
+        antigravity: ".agents/skills",
       };
   const targets: Exclude<Target, "all">[] = options.target === "all" ? ["shared", "claude"] : [options.target];
   const unique = new Map<string, Destination>();
@@ -283,6 +288,9 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
     const instructions = await inspectInstructions(options.project);
     if (instructions.state === "malformed") throw new Error(`malformed managed Copilot instructions: ${instructions.path}`);
   }
+  if (options.scope === "project") {
+    await Promise.all(hookTargets(options.target).map((target) => inspectHooks(options.project, PACKAGE_ROOT, target)));
+  }
   const packaged = new Set(skills);
   const packageJson = JSON.parse(await readFile(path.join(PACKAGE_ROOT, "package.json"), "utf8")) as { version: string };
   const destinationPlans: InstallPlan[] = [];
@@ -377,12 +385,21 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
     console.log(`${action === "skip" ? "skip" : options.dryRun ? `would ${action}` : action} Copilot production instructions`);
     if (!options.dryRun) console.log("Copilot CLI: /skills list | /skills reload | /skills info <skill-name>");
   }
+  if (options.scope === "project") {
+    for (const target of hookTargets(options.target)) {
+      const action = await changeHooks(options.project, PACKAGE_ROOT, target, "install", options.dryRun);
+      console.log(`${action === "skip" ? "skip" : options.dryRun ? `would ${action}` : action} ${target} project hooks`);
+    }
+  }
 }
 
 async function uninstall(options: Options): Promise<void> {
   if ((options.target === "copilot" || options.target === "all") && options.scope === "project") {
     const instructions = await inspectInstructions(options.project);
     if (instructions.state === "malformed") throw new Error(`malformed managed Copilot instructions: ${instructions.path}`);
+  }
+  if (options.scope === "project") {
+    await Promise.all(hookTargets(options.target).map((target) => inspectHooks(options.project, PACKAGE_ROOT, target)));
   }
   const destinationPlans: {
     destination: Destination;
@@ -431,6 +448,14 @@ async function uninstall(options: Options): Promise<void> {
     const action = await changeInstructions(options.project, "uninstall", options.dryRun);
     if (action !== "skip") console.log(`${options.dryRun ? "would remove" : "remove"} Copilot production instructions`);
   }
+  if (options.scope === "project") {
+    const targets = hookTargets(options.target);
+    for (const target of targets) {
+      const action = await changeHooks(options.project, PACKAGE_ROOT, target, "uninstall", options.dryRun);
+      if (action !== "skip") console.log(`${options.dryRun ? "would remove" : "remove"} ${target} project hooks`);
+    }
+    if (options.target === "all" && targets.length > 0) await removeSharedHookScript(options.project, options.dryRun);
+  }
 }
 
 async function inspect(options: Options): Promise<{
@@ -438,6 +463,7 @@ async function inspect(options: Options): Promise<{
   currentPackageVersion: string;
   installations: (Destination & { packageVersion: string | null; packageVersionMismatch: boolean; skills: { name: string; state: InspectionState; mode: InstallMode | null; packaged: "current" | "outdated" | null }[] })[];
   copilotInstructions?: Awaited<ReturnType<typeof inspectInstructions>>;
+  hooks?: { target: string; state: HookState; config: string; script: string }[];
 }> {
   const skills = await packagedSkills();
   const packaged = new Set(skills);
@@ -461,7 +487,11 @@ async function inspect(options: Options): Promise<{
   }
   const copilotInstructions = (options.target === "copilot" || options.target === "all") && options.scope === "project"
     ? await inspectInstructions(options.project) : undefined;
-  return { packagedSkills: skills, currentPackageVersion: packageJson.version, installations, ...(copilotInstructions ? { copilotInstructions } : {}) };
+  const hooks = options.scope === "project"
+    ? await Promise.all(hookTargets(options.target).map((target) => inspectHooks(options.project, PACKAGE_ROOT, target)))
+    : undefined;
+  return { packagedSkills: skills, currentPackageVersion: packageJson.version, installations,
+    ...(copilotInstructions ? { copilotInstructions } : {}), ...(hooks ? { hooks } : {}) };
 }
 
 async function validateCanonical(): Promise<string[]> {
@@ -499,7 +529,8 @@ async function main(): Promise<void> {
       const unhealthy = report.installations.flatMap((entry) => entry.skills)
         .filter((entry) => entry.state !== "unchanged" || entry.packaged === "outdated");
       const instructionsUnhealthy = report.copilotInstructions && !["unchanged", "unmanaged"].includes(report.copilotInstructions.state);
-      const output = { ...report, validationErrors, healthy: validationErrors.length === 0 && unhealthy.length === 0 && !instructionsUnhealthy };
+      const hooksUnhealthy = report.hooks?.some((hook) => hook.state !== "unchanged") ?? false;
+      const output = { ...report, validationErrors, healthy: validationErrors.length === 0 && unhealthy.length === 0 && !instructionsUnhealthy && !hooksUnhealthy };
       if (parsed.options.json) console.log(JSON.stringify(output, null, 2));
       else {
         console.log(`Packaged skills (${report.packagedSkills.length}): ${report.packagedSkills.join(", ")}`);
@@ -512,6 +543,7 @@ async function main(): Promise<void> {
           if (outdated.length) console.log(`  packaged updates: ${outdated.map((skill) => skill.name).join(", ")}`);
         }
         if (report.copilotInstructions) console.log(`Copilot instructions: ${report.copilotInstructions.state} ${report.copilotInstructions.path}`);
+        report.hooks?.forEach((hook) => console.log(`${hook.target} hooks: ${hook.state} ${hook.config}`));
         validationErrors.forEach((error) => console.error(`error: ${error}`));
       }
       if (command === "doctor" && !output.healthy) process.exitCode = 1;
