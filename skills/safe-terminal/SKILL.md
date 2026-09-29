@@ -1,59 +1,36 @@
 ---
 name: safe-terminal
-description: Run and recover from terminal commands safely, especially after malformed, corrupted, or unexpectedly failing CLI commands. Use for shell troubleshooting or commands that could affect tools, credentials, configuration, or data.
+description: Run and recover from terminal commands safely, especially after malformed, corrupted, unexpectedly failing, or unavailable CLI commands. Use for shell troubleshooting or commands that could affect tools, credentials, configuration, or data.
 ---
 
 # Safe terminal
 
-Before execution, verify the command, working directory, resolved target, quoting, and likely side effects. Prefer read-only inspection before mutation and narrow explicit paths over broad globs or unresolved variables.
+Before execution, verify the command, shell, working directory, resolved target, quoting, and likely side effects. Prefer read-only inspection before mutation and narrow explicit paths over broad globs or unresolved variables.
 
-## Automatic command correction
+## Inspect what the shell actually ran
 
-When a command is about to be executed or has just failed, detect and fix the problem **before** escalating to environment changes. Common causes include but are not limited to:
+When a command fails, compare the submitted text, the command displayed by the terminal, and the executable named in the error. A copied command can contain invisible bytes or terminal control sequences, while the shell or tool host may strip or interpret them before execution. A caret rendering such as `^X` is a clue to inspect, not proof that it reached the shell as part of the executable name.
 
-- **Control-character prefixes** — Agent hosts sometimes prepend `^Q` (XON), `^C`, `^M`, `^[`, or other stray bytes. For example `^Qgit add .` resolves to a nonexistent executable and the shell may search tool installation directories instead of running `git`. Strip the prefix, log what was removed, and re-execute.
-- **Typos and misspellings** — `gti status`, `dontnet build`, `nmp install`. Map to the obvious intended command.
-- **Wrong or missing flags** — `git commit` without `-m`, `dotnet test --filtre` instead of `--filter`.
-- **Quoting and escaping errors** — Unmatched quotes, unescaped special characters, or shell-expansion issues.
-- **Wrong working directory** — Command assumes a project root but the shell is in a subdirectory or vice versa.
-- **Missing arguments** — Required positional arguments omitted.
-- **Stale or incorrect paths** — File or directory references that do not exist or have moved.
+- If a leading or embedded control character, escape sequence, pasted prompt, line break, or malformed token **survived into the executable or arguments**, reconstruct a clean command from the intended tokens. Show the meaningful correction and retry once.
+- If the error names the expected executable, do not claim a prefix caused the failure merely because the submitted text contains one. Diagnose that executable's availability in the actual shell and process environment.
+- Treat multiple visible anomalies independently. Removing one does not establish that the next failure has the same cause.
 
-In every case, correct only what is broken and preserve the original intent.
+Check typos, flags, quoting, shell-specific syntax, working directory, paths, and missing arguments only where the command or output supports them. Preserve the user's requested operation and options; do not drop build, restore, test, or safety flags just to make the command run.
 
-## Feedback loop
+## Diagnose an unavailable executable
 
-Follow a structured inspect → classify → correct → retry → verify cycle for every failure instead of retrying blindly or escalating to environment changes.
+For a command-not-found error, use read-only checks in the **same shell/session** that failed. In PowerShell, use `Get-Command <name> -All` and, where useful, `where.exe <name>`; in cmd use `where <name>`; in POSIX shells use `command -v <name>`. Check the current `PATH` without printing credentials or unrelated environment values. If the tool is found, distinguish a typo or wrong shell from an executable that is present but absent from that process's `PATH`. If it is not found, report that the tool is unavailable in this environment; do not guess its installation path or repeatedly run the same command.
 
-```text
-┌──────────────────────────────────────────────────┐
-│  1. INSPECT  — Read the exact command and error  │
-│     ↓                                            │
-│  2. CLASSIFY — Identify the single root cause:   │
-│     control-char prefix? typo? quoting? flags?   │
-│     wrong directory? missing arg? env problem?   │
-│     ↓                                            │
-│  3. CORRECT  — Fix only the identified cause     │
-│     ↓                                            │
-│  4. RETRY    — Execute the corrected command     │
-│     ↓                                            │
-│  5. VERIFY   — Did the retry succeed?            │
-│     • YES → Continue with the task               │
-│     • NO  → Return to step 1 with the new error  │
-│             (max 3 iterations, then report)      │
-└──────────────────────────────────────────────────┘
-```
+Use an already configured shell or approved tool runner when it resolves the issue without changing project configuration. Do not respond to a malformed command by installing software, editing `PATH` or shell profiles, changing credentials, or changing tool configuration. Require evidence and appropriate authorization for environment changes.
 
-### Feedback-loop rules
+## Correct, retry, verify
 
-- **At most 3 correction attempts** for the same logical command. After three failures, stop retrying and report the full error chain—each attempted command and its output—to the user.
-- **Each iteration must identify a different root cause.** Retrying the same fix is not a correction.
-- **Never escalate to environment mutation** (changing `PATH`, installing packages, editing shell profiles, modifying credentials) unless the loop conclusively shows a genuine environment gap **and** the user explicitly approves the change.
-- **Preserve original intent.** If the corrected command differs in meaning from what was requested, confirm with the user before executing.
+1. Inspect the exact attempted command and first actionable error; distinguish shell parsing, executable lookup, and tool-level failure.
+2. Make the smallest evidence-based correction. State what changed when it is material.
+3. Retry only if the cause is corrected and the original operation is authorized. Check the new output as a new failure, rather than assuming the previous diagnosis still applies.
+4. Stop after a bounded number of distinct corrections (at most three for the same logical command). Report the unresolved blocker and the relevant checks without dumping secrets or verbose logs.
 
-## Environment protection
-
-Do not respond to malformed input by changing `PATH`, shell profiles, installations, credentials, authentication, or tool configuration. Require evidence and appropriate permission before any such change.
+Never silently substitute a different operation. Ask before a correction changes the requested result or has new side effects.
 
 ## Destructive-action safety
 
