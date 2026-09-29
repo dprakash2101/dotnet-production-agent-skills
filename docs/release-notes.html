@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Release notes for .NET Production Agent Skills, including unreleased Redis caching guidance and the published v0.2.0 changes.">
+  <meta name="description" content="Recent updates, improvements, and published versions of .NET Production Agent Skills.">
   <title>Release notes — .NET Production Agent Skills</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -28,12 +28,32 @@
 
   <main id="main-content" class="release-main">
     <div class="container">
-      <div class="section-kicker">Project updates</div>
-      <h1 class="section-title">Release notes</h1>
-      <p class="section-subtitle">Changes to the installer and skill library, with publication status stated for each entry.</p>
+      <section class="release-hero" aria-labelledby="release-title">
+        <div class="release-hero-copy">
+          <p class="section-kicker">The project changelog</p>
+          <h1 id="release-title">Built, refined, <span>released.</span></h1>
+          <p>Track what’s new across the installer and skill library. Each update shows whether it’s published or still in progress.</p>
+          <a class="release-source-link" href="https://github.com/dprakash2101/dotnet-production-agent-skills/blob/main/RELEASE_NOTES.md">View full release notes <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="release-hero-mark" aria-hidden="true"><span>✳</span><small>CHANGELOG</small></div>
+      </section>
+
+      <div class="release-list-heading"><span>Recent updates</span><span>Newest first</span></div>
+
+      <article class="release-entry release-entry-featured" aria-labelledby="terminal-title">
+        <div class="release-entry-topline"><p class="release-status status-unreleased">Unreleased · <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/9">PR #9 · merged</a></p><span class="release-type">Workflow</span></div>
+        <h2 id="terminal-title">Clearer terminal failure diagnosis</h2>
+        <p class="release-summary">Improves how agents inspect failed commands, find unavailable tools, and decide whether a retry is justified.</p>
+        <h3>Improved</h3>
+        <ul>
+          <li><code>safe-terminal</code> distinguishes malformed input from an executable that is missing in the active shell.</li>
+          <li>Added read-only command lookup guidance for PowerShell, Command Prompt, and POSIX shells.</li>
+          <li>Retries now require an evidence-based correction and preserve the requested command options.</li>
+        </ul>
+      </article>
 
       <article class="release-entry" aria-labelledby="hooks-title">
-        <p class="release-status">v0.3.0 · Prepared for npm publication</p>
+        <div class="release-entry-topline"><p class="release-status status-prepared">v0.3.0 · Prepared for npm</p><span class="release-type">CLI &amp; hooks</span></div>
         <h2 id="hooks-title">Multi-agent hooks and Antigravity</h2>
         <h3>New</h3>
         <ul>
@@ -46,7 +66,7 @@
       </article>
 
       <article class="release-entry" aria-labelledby="redis-title">
-        <p class="release-status">Unreleased · Proposed in <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/6">PR #6</a> · Not yet published to npm</p>
+        <div class="release-entry-topline"><p class="release-status status-unreleased">Unreleased · <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/6">PR #6</a></p><span class="release-type">Skill library</span></div>
         <h2 id="redis-title">Redis caching skill</h2>
         <h3>New</h3>
         <ul>
@@ -57,7 +77,7 @@
       </article>
 
       <article class="release-entry" aria-labelledby="v020-title">
-        <p class="release-status"><a href="https://www.npmjs.com/package/dotnet-production-agent-skills/v/0.2.0">v0.2.0 on npm</a> · Implementation in <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/4">PR #4</a></p>
+        <div class="release-entry-topline"><p class="release-status status-published"><a href="https://www.npmjs.com/package/dotnet-production-agent-skills/v/0.2.0">v0.2.0 · Published on npm</a></p><span class="release-type">CLI &amp; skills</span></div>
         <h2 id="v020-title">Copilot instructions and safer skill management</h2>
         <p>Version <code>0.2.0</code> is published to npm. This page documents the CLI and skill changes included in that release.</p>
 
@@ -84,7 +104,6 @@
         </ul>
         <p class="release-verification">Validation: 30 skills checked and 14 CLI tests passed with <code>npm run validate</code>.</p>
       </article>
-      <p><a href="https://github.com/dprakash2101/dotnet-production-agent-skills/blob/main/RELEASE_NOTES.md">Read the repository release notes</a></p>
     </div>
   </main>
 
