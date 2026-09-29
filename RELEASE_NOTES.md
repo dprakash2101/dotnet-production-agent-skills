@@ -19,9 +19,9 @@
 - GitHub release tags are authoritative for release-triggered npm publishes. A `v0.3.0` release aligns both package files to `0.3.0` before checking npm availability or publishing, even when the tagged commit still contains an already-published version.
 - The workflow now fails early if the resolved tag version and `package.json` ever disagree, preventing an old package version from being checked or published accidentally.
 
-## Unreleased — Safe terminal diagnostics
+## v0.3.1 — Safe terminal diagnostics
 
-Included in [PR #9](https://github.com/dprakash2101/dotnet-production-agent-skills/pull/9); this change is not yet published to npm.
+Released in [`dotnet-production-agent-skills@0.3.1`](https://www.npmjs.com/package/dotnet-production-agent-skills/v/0.3.1).
 
 ### Improved
 
