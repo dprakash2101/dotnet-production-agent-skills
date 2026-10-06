@@ -163,7 +163,7 @@ The catalog is grouped by task so agents can load only the guidance relevant to 
 | :--- | :--- | :--- |
 | [`task-router`](skills/task-router/SKILL.md) | Classify requests to select the smallest proportionate workflow when the path forward is ambiguous. | — |
 | [`context-reset`](skills/context-reset/SKILL.md) | Reorient safely when user instructions interrupt, pivot, or invalidate an in-progress coding task. | — |
-| [`safe-terminal`](skills/safe-terminal/SKILL.md) | Execute shell commands safely, handle failures, and prevent accidental mutations or credential leaks. | — |
+| [`safe-terminal`](skills/safe-terminal/SKILL.md) | Execute shell commands safely, handle failures, and prevent accidental mutations or credential leaks. | [shell-recovery](skills/safe-terminal/references/shell-recovery.md) |
 | [`poc-development`](skills/poc-development/SKILL.md) | Build bounded, explicit spikes or prototypes to answer technical questions without cutting production corners prematurely. | — |
 
 ### 2. 🏗️ Architecture & Core Implementation
