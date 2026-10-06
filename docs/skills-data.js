@@ -40,8 +40,8 @@ window.SKILLS_DATA = [
     description: "Run and recover from terminal commands safely, especially after malformed or unexpectedly failing CLI commands.",
     whenToUse: "Use for shell troubleshooting or commands that could affect tools, credentials, configuration, or data.",
     tags: ["terminal", "bash", "cli", "safe-execution"],
-    hasReferences: false,
-    references: [],
+    hasReferences: true,
+    references: ["references/shell-recovery.md"],
     examplePrompt: "Inspect the failed dotnet build command and safely diagnose the error without altering credentials or environment variables."
   },
   {

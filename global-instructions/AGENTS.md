@@ -5,5 +5,6 @@
 - Preserve existing architecture and public contracts unless the request requires a change.
 - After a coherent change, review the complete diff and run proportionate targeted validation. Preserve pre-existing user changes.
 - Do not commit, push, change credentials/tool configuration, or perform destructive operations without authorization.
+- Before terminal execution, apply `safe-terminal`: verify shell and project context, diagnose the actual failure, and retry only after an evidence-based correction. Never move into Git/tool installation directories or inject terminal control sequences to recover a project command. Keep executable lookup separate from repository selection.
 
 Load focused Agent Skills for detailed workflows; do not duplicate their full instructions here.
