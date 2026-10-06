@@ -2,7 +2,7 @@
 
 ## v0.3.2 — Repository-safe terminal recovery
 
-Prepared for publication; this version has not yet been published to npm.
+Released in [`dotnet-production-agent-skills@0.3.2`](https://www.npmjs.com/package/dotnet-production-agent-skills/v/0.3.2).
 
 ### Improved
 
@@ -21,7 +21,7 @@ Prepared for publication; this version has not yet been published to npm.
 
 - CLI targets, scopes, flags, and copy/link modes are unchanged.
 - These changes strengthen agent guidance; existing hooks do not enforce the new repository-directory recovery rules.
-- After publication, update installed skills with `npx dotnet-production-agent-skills@0.3.2 update --target all`. Run the update in project scope (`--scope project`) to refresh that project's managed Copilot instructions and installed skills. Review local edits before updating.
+- Update installed skills with `npx dotnet-production-agent-skills@0.3.2 update --target all`. Run the update in project scope (`--scope project`) to refresh that project's managed Copilot instructions and installed skills. Review local edits before updating.
 
 ### Validation
 
