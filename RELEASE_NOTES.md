@@ -1,5 +1,32 @@
 # Release notes
 
+## v0.3.2 — Repository-safe terminal recovery
+
+Prepared for publication; this version has not yet been published to npm.
+
+### Improved
+
+- Keep terminal commands anchored to the intended project. Never recover a failed project command by moving into Git or another tool's installation directory.
+- Separate executable lookup from repository selection. Verify the intended Git root before mutations, preserve linked-worktree support, and inspect relevant Git overrides when an explicit project path selects an unexpected repository.
+- Diagnose the submitted/executed command and first actionable error before retrying. Submit plain command text, preserve requested arguments, and avoid speculative shell, PATH, profile, configuration, or installation changes.
+- Include the core recovery rules in managed Copilot project instructions and global engineering guidance, and connect Git workflows to `safe-terminal`.
+
+### Documentation
+
+- Add `references/shell-recovery.md` with PowerShell, Command Prompt, and Bash diagnostics, quoting/invocation examples, failure classification, and primary documentation sources.
+- Advertise the reference in both the README and hosted skills catalog.
+- Refresh the website release-notes page with clearer publication status and a new layout.
+
+### Compatibility and upgrade
+
+- CLI targets, scopes, flags, and copy/link modes are unchanged.
+- These changes strengthen agent guidance; existing hooks do not enforce the new repository-directory recovery rules.
+- After publication, update installed skills with `npx dotnet-production-agent-skills@0.3.2 update --target all`. Run the update in project scope (`--scope project`) to refresh that project's managed Copilot instructions and installed skills. Review local edits before updating.
+
+### Validation
+
+`npm run validate` passed: 31 skills validated and 21 tests passed. Five recovery scenarios were evaluated independently as proposed commands; Windows commands were not executed on Windows. Catalog metadata, reference paths, and whitespace checks passed.
+
 ## v0.3.0 — Multi-agent hooks and Antigravity
 
 ### New
