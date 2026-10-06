@@ -41,9 +41,9 @@
       <div class="release-list-heading"><span>Recent updates</span><span>Newest first</span></div>
 
       <article class="release-entry release-entry-featured" aria-labelledby="v032-title">
-        <div class="release-entry-topline"><p class="release-status status-prepared">v0.3.2 · Prepared for publication</p><span class="release-type">Workflow &amp; documentation</span></div>
+        <div class="release-entry-topline"><p class="release-status status-published"><a href="https://www.npmjs.com/package/dotnet-production-agent-skills/v/0.3.2">Released in v0.3.2</a></p><span class="release-type">Workflow &amp; documentation</span></div>
         <h2 id="v032-title">Repository-safe terminal recovery</h2>
-        <p class="release-summary">Keeps failed-command recovery in the intended project and separates executable lookup from repository selection. This version is not yet published to npm.</p>
+        <p class="release-summary">Keeps failed-command recovery in the intended project and separates executable lookup from repository selection.</p>
         <h3>Improved</h3>
         <ul>
           <li>Never move project commands into Git or another tool's installation folder. Verify the intended repository before Git mutations, including linked worktrees and unexpected Git overrides.</li>
@@ -54,7 +54,7 @@
         <ul>
           <li>New <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/blob/main/skills/safe-terminal/references/shell-recovery.md">shell recovery examples</a> cover PowerShell, Command Prompt, and Bash; both skill catalogs advertise the reference.</li>
           <li>The release-notes page has a refreshed layout and clearer publication status.</li>
-          <li>After publication, run <code>npx dotnet-production-agent-skills@0.3.2 update --target all</code>; add <code>--scope project</code> to refresh project skills and managed Copilot instructions. Review local edits first.</li>
+          <li>Run <code>npx dotnet-production-agent-skills@0.3.2 update --target all</code>; add <code>--scope project</code> to refresh project skills and managed Copilot instructions. Review local edits first.</li>
           <li>CLI options remain compatible. These are guidance improvements; existing hooks do not enforce the new directory-recovery rules.</li>
         </ul>
         <p class="release-verification">Validation: 31 skills and 21 tests passed. Five recovery scenarios were evaluated as proposed commands; Windows commands were not run on Windows.</p>
