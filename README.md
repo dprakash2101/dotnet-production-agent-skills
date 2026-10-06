@@ -293,6 +293,8 @@ The CLI installs and manages guidance; it does not route prompts or load every s
 
 The initial policy blocks force-push, destructive Git reset/clean/branch deletion, broad recursive deletion, and direct access to common credential-bearing files. Safe commands continue normally. Host configuration is written to `.codex/hooks.json`, `.github/hooks/dotnet-production-agent-skills.json`, `.claude/settings.json`, `.cursor/hooks.json`, or `.agents/hooks.json` for Antigravity.
 
+Terminal recovery guidance keeps commands anchored to the intended repository, separates executable lookup from repository selection, and forbids moving into Git/tool installation directories as a workaround. Copilot project instructions include the critical rules so they are available even before the focused `safe-terminal` skill is selected. Skills and instructions guide the model; the existing hooks do not enforce these directory/recovery rules. See the skill's [shell recovery examples](skills/safe-terminal/references/shell-recovery.md) for diagnostics and primary sources.
+
 Copilot project installs manage only the text between `<!-- dotnet-production-agent-skills:start -->` and `<!-- dotnet-production-agent-skills:end -->`. Existing team instructions outside those markers remain intact. Uninstall removes only the managed section. User-scope Copilot installs install skills into `~/.copilot/skills`; repository instructions apply only to project scope.
 
 ```sh

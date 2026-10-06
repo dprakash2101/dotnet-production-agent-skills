@@ -5,6 +5,8 @@ description: Perform safe Git branch, stage, commit, and push operations for eng
 
 # Fast, safe Git workflow
 
+Apply `safe-terminal` before execution and on command failure. Keep the working directory in the intended project, verify the repository root when context is not established, and never recover by moving into Git's installation folder. Executable lookup does not select the repository. Split diagnostic recovery from the mutation sequence below; resume only when the cause is corrected and repository context is verified.
+
 Minimize terminal calls and token-heavy output without weakening review. Batch compatible Git commands into the fewest practical invocations, and reuse branch, status, diff, validation, and remote facts already established in the current task when no intervening operation could have changed them. Do not issue one tool call per Git command by default.
 
 For a fresh preflight, prefer one combined inspection such as `git status --short --branch` instead of separate status and branch commands. Inspect only the relevant diff; do not repeat a full diff review that was just completed.
