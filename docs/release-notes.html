@@ -46,7 +46,7 @@
         <p class="release-summary">Prohibits co-author trailers and AI attribution in commits and pull requests. Prepared for release after <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/13">PR #13</a> is merged; not yet published to npm.</p>
         <h3>Improved</h3>
         <ul>
-          <li>New opt-in <code>git-hook</code> command installs a Git <code>commit-msg</code> hook rejecting co-author trailers in final commit messages. Supports dry-run, respects configured hook paths, and preserves existing hooks.</li>
+          <li>New opt-in <code>git-hook</code> command installs a Git <code>commit-msg</code> hook rejecting co-author trailers in final commit messages. Supports dry-run, respects configured hook paths, and preserves existing hooks. See the <a href="hooks.html">hook setup guide</a> for installation, testing, existing-hook integration, troubleshooting, and removal.</li>
           <li>Strengthen the Git workflow skill, managed Copilot instructions, and global guardrails to prohibit <code>Co-authored-by:</code> trailers, equivalent metadata, AI/agent signatures, and generated-by footers.</li>
           <li>Cover indirect attribution through trailers, templates, API fields, and Git identity overrides.</li>
           <li>Inspect complete proposed commit/PR messages before creation and new commits before pushing. Stop and report if tooling inserts attribution; do not bypass hooks or rewrite existing commits.</li>
