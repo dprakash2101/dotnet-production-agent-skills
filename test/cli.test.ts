@@ -21,6 +21,56 @@ function run(home: string, ...args: string[]) {
   return runAt(home, repository, ...args);
 }
 
+function gitAt(home: string, cwd: string, ...args: string[]) {
+  return spawnSync("git", ["-c", "user.name=Hook Test", "-c", "user.email=hook@example.invalid", "-c", "commit.gpgsign=false", ...args], {
+    cwd, encoding: "utf8", env: { ...process.env, HOME: home, USERPROFILE: home, GIT_CONFIG_NOSYSTEM: "1" },
+  });
+}
+
+test("Git commit-msg hook rejects final trailers and allows ordinary commits", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-git-hook-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "dotnet-git-hook-project-"));
+  assert.equal(gitAt(home, project, "init", "--quiet").status, 0);
+  const install = runAt(home, project, "git-hook");
+  assert.equal(install.status, 0, install.stderr);
+  assert.match(runAt(home, project, "git-hook").stdout, /verified/);
+  const messages = [
+    "Feature\n\nCo-authored-by: Copilot <copilot@example.invalid>",
+    "Feature\r\n\r\nCO-AUTHORED-BY: Agent <agent@example.invalid>\r\n",
+  ];
+  for (const message of messages) {
+    const result = gitAt(home, project, "commit", "--allow-empty", "-m", message);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Commit rejected/);
+  }
+  const messageFile = path.join(project, "message.txt");
+  await writeFile(messageFile, messages[0]!);
+  assert.notEqual(gitAt(home, project, "commit", "--allow-empty", "-F", messageFile).status, 0);
+  assert.notEqual(gitAt(home, project, "commit", "--allow-empty", "-m", "Feature", "--trailer", "Co-authored-by: Copilot <copilot@example.invalid>").status, 0);
+  assert.notEqual(gitAt(home, project, "rev-parse", "--verify", "HEAD").status, 0, "Rejected commits must not create history");
+  const valid = gitAt(home, project, "commit", "--allow-empty", "-m", "Explain the co-authored-by policy\n\nSigned-off-by: Developer <dev@example.invalid>");
+  assert.equal(valid.status, 0, valid.stderr);
+});
+
+test("Git hook installer respects custom hooksPath, preserves conflicts, and supports dry-run", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "dotnet-git-hook-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "dotnet-git-hook-project-"));
+  assert.equal(gitAt(home, project, "init", "--quiet").status, 0);
+  assert.equal(gitAt(home, project, "config", "core.hooksPath", ".custom-hooks").status, 0);
+  const hook = path.join(project, ".custom-hooks", "commit-msg");
+  const dryRun = runAt(home, project, "git-hook", "--dry-run");
+  assert.equal(dryRun.status, 0, dryRun.stderr);
+  await assert.rejects(readFile(hook), { code: "ENOENT" });
+  assert.equal(runAt(home, home, "git-hook", "--project", project).status, 0);
+  assert.equal(gitAt(home, project, "config", "core.hooksPath").stdout.trim(), ".custom-hooks");
+  await writeFile(hook, "#!/bin/sh\n# existing team hook\nexit 0\n");
+  const conflict = runAt(home, project, "git-hook", "--force", "--yes");
+  assert.notEqual(conflict.status, 0);
+  assert.match(conflict.stderr, /Existing commit-msg hook preserved/);
+  assert.match(await readFile(hook, "utf8"), /existing team hook/);
+  assert.notEqual(runAt(home, home, "git-hook").status, 0, "Non-repositories must fail");
+});
+
 test("copy install, doctor, conflict protection, and uninstall", async () => {
   const home = await mkdtemp(path.join(tmpdir(), "dotnet-agent-skills-"));
   const installedSkill = path.join(home, ".agents", "skills", "code-quality", "SKILL.md");

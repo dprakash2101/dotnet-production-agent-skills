@@ -22,8 +22,9 @@ import { createInterface } from "node:readline/promises";
 import { changeInstructions, inspectInstructions } from "./copilot/instructions.js";
 import { changeHooks, hookTargets, inspectHooks, removeSharedHookScript, type HookState } from "./hooks.js";
 import { validateSkills } from "./skills/validation.js";
+import { installGitHook } from "./git-hook.js";
 
-type Command = "install" | "update" | "list" | "doctor" | "uninstall";
+type Command = "install" | "update" | "list" | "doctor" | "uninstall" | "git-hook";
 type Target = "all" | "shared" | "codex" | "copilot" | "claude" | "cursor" | "antigravity";
 type Scope = "user" | "project";
 type InstallMode = "copy" | "link";
@@ -80,6 +81,7 @@ Commands:
   list         List packaged skills and installation state
   doctor       Validate packaged skills and inspect installation health
   uninstall    Remove only skills tracked by this package
+  git-hook     Opt in to a Git commit-msg hook in the current/--project repository
 
 Options:
   --target <all|shared|codex|copilot|claude|cursor|antigravity>
@@ -517,11 +519,12 @@ async function main(): Promise<void> {
       console.log(usage());
       return;
     }
-    const commands = new Set<Command>(["install", "update", "list", "doctor", "uninstall"]);
+    const commands = new Set<Command>(["install", "update", "list", "doctor", "uninstall", "git-hook"]);
     if (!commands.has(parsed.command as Command)) throw new Error(`unknown command: ${parsed.command}`);
     const command = parsed.command as Command;
 
-    if (command === "install" || command === "update") await installOrUpdate(parsed.options, command);
+    if (command === "git-hook") console.log(await installGitHook(parsed.options.project, PACKAGE_ROOT, parsed.options.dryRun));
+    else if (command === "install" || command === "update") await installOrUpdate(parsed.options, command);
     else if (command === "uninstall") await uninstall(parsed.options);
     else {
       const report = await inspect(parsed.options);
