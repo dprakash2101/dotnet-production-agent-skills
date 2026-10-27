@@ -293,6 +293,20 @@ The CLI installs and manages guidance; it does not route prompts or load every s
 
 The initial policy blocks force-push, destructive Git reset/clean/branch deletion, broad recursive deletion, and direct access to common credential-bearing files. Safe commands continue normally. Host configuration is written to `.codex/hooks.json`, `.github/hooks/dotnet-production-agent-skills.json`, `.claude/settings.json`, `.cursor/hooks.json`, or `.agents/hooks.json` for Antigravity.
 
+### Reject co-author trailers with Git
+
+After v0.3.3 is published, opt in from each repository:
+
+```sh
+npx dotnet-production-agent-skills@0.3.3 git-hook
+# Preview, or select another repository
+npx dotnet-production-agent-skills@0.3.3 git-hook --project <path> --dry-run
+```
+
+This installs an executable Git `commit-msg` hook that rejects case-insensitive `Co-authored-by:` lines in the final commit message, including `-m`, `-F`, template, and `--trailer` input. It rejects the commit without editing the message. Node.js must be available when Git runs. The installer respects Git's configured `core.hooksPath`, does not change Git configuration, and refuses to overwrite existing or modified hooks even with `--force`. For an existing hook manager, integrate the packaged `hooks/commit-msg` check manually. Skill install/update/uninstall does not manage this separately opted-in Git hook.
+
+This local hook covers Git CLI commits from any agent or developer. It does not validate PR descriptions or GitHub/API-created commits, and `--no-verify` or disabling hooks can bypass it. Use a required server-side PR check to enforce the policy before merging API-created or bypassed commits. See [Git hook documentation](https://git-scm.com/docs/githooks#_commit_msg).
+
 Terminal recovery guidance keeps commands anchored to the intended repository, separates executable lookup from repository selection, and forbids moving into Git/tool installation directories as a workaround. Copilot project instructions include the critical rules so they are available even before the focused `safe-terminal` skill is selected. Skills and instructions guide the model; the existing hooks do not enforce these directory/recovery rules. See the skill's [shell recovery examples](skills/safe-terminal/references/shell-recovery.md) for diagnostics and primary sources.
 
 Copilot project installs manage only the text between `<!-- dotnet-production-agent-skills:start -->` and `<!-- dotnet-production-agent-skills:end -->`. Existing team instructions outside those markers remain intact. Uninstall removes only the managed section. User-scope Copilot installs install skills into `~/.copilot/skills`; repository instructions apply only to project scope.
@@ -318,6 +332,7 @@ Commands:
   list         Display available skills and current installation status
   doctor       Validate skill metadata and report host installation health
   uninstall    Safely remove only skills tracked by this package
+  git-hook     Opt in to a Git commit-msg hook in the current/--project repository
 ```
 
 ### Options & Flags

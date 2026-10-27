@@ -1,0 +1,16 @@
+#!/usr/bin/env node
+
+// dotnet-production-agent-skills: reject co-author attribution in the final message.
+(async () => {
+  const { readFile } = await import("node:fs/promises");
+  const file = process.argv[2];
+  if (!file) throw new Error("Expected the commit message file path.");
+  const message = await readFile(file, "utf8");
+  if (/^\s*co-authored-by\s*:/im.test(message)) {
+    process.stderr.write("Commit rejected: Co-authored-by trailers are forbidden. Remove the attribution and retry; do not bypass the hook.\n");
+    process.exitCode = 1;
+  }
+})().catch((error) => {
+  process.stderr.write(`Commit message validation failed: ${error.message}\n`);
+  process.exitCode = 1;
+});

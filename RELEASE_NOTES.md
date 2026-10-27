@@ -1,5 +1,27 @@
 # Release notes
 
+## v0.3.3 — Strict coding-agent authorship rules
+
+Prepared for release after PR #13 is merged; not yet published to npm.
+
+### Improved
+
+- Add an opt-in `git-hook` CLI command that installs a Git `commit-msg` hook rejecting case-insensitive `Co-authored-by:` lines in final commit messages. Respect `core.hooksPath`, support dry-run and explicit project paths, and preserve existing hooks without changing Git configuration.
+- Strengthen the `git-workflow` skill, managed Copilot project instructions, and global engineering guardrails to prohibit `Co-authored-by:` trailers, equivalent co-author metadata, AI/agent signatures, and generated-by footers in commits and pull requests.
+- Cover indirect attribution through commit trailers, templates, API fields, and Git author/committer identity overrides.
+- Require inspection of complete proposed commit/PR messages before creation and new commits before pushing. If tooling inserts attribution, stop before publishing and report the blocker without bypassing hooks or rewriting existing commits.
+
+### Compatibility and upgrade
+
+- Existing CLI targets, scopes, flags, and copy/link modes are unchanged. Git hook installation is separate from skill installation and updates.
+- After publication, run `npx dotnet-production-agent-skills@0.3.3 git-hook` inside each repository to opt in. Node.js must be available when Git runs. Existing hook managers require manual integration.
+- The Git hook rejects co-author trailers locally; AI footers and PR text remain covered by agent instructions. API-created commits and hook bypasses require a server-side required check for merge enforcement.
+- After publication, update installed skills with `npx dotnet-production-agent-skills@0.3.3 update --target all`. Add `--scope project` to refresh that project's managed Copilot instructions and installed skills. Review local edits before updating.
+
+### Validation
+
+`npm run validate` passed: all 31 skills validated, the TypeScript build passed, and all 23 tests passed. Git hook tests cover real commits with inline, file-based, and trailer-based messages, installer idempotency, conflict preservation, custom hook paths, and dry-run behavior. Whitespace checks passed.
+
 ## v0.3.2 — Repository-safe terminal recovery
 
 Released in [`dotnet-production-agent-skills@0.3.2`](https://www.npmjs.com/package/dotnet-production-agent-skills/v/0.3.2).

@@ -20,7 +20,15 @@ Branch names:
 
 Reuse a Jira ID from the current branch or user input. Never invent one; ask if the requested operation requires an unavailable ID.
 
-Commit messages begin with the Jira ID, for example `XDCI-12345 Add order webhook retry handling`. Do not add co-author, AI, or agent attribution.
+Commit messages begin with the Jira ID, for example `XDCI-12345 Add order webhook retry handling`.
+
+## Strict authorship policy
+
+- Never add `Co-authored-by:` trailers (case-insensitive), co-author metadata, or equivalent attribution to commits or pull requests. This applies to every coding agent, including GitHub Copilot, Codex, Claude, and Cursor.
+- Never append AI/agent signatures, credits, or footers such as "Generated with Copilot" or "Assisted by Claude" to commit messages or pull request titles/descriptions.
+- Do not supply attribution through `git commit --trailer`, commit-message templates, API fields, or another indirect mechanism. Do not change the configured Git author/committer identity or use `--author` to credit an agent.
+- Before creating a commit or pull request, inspect the complete proposed message, including its body and trailers, and remove any automatically suggested attribution. Before pushing, inspect the new commits' complete messages with `git log <base>..HEAD --format=full` and verify the same policy.
+- If a hook, tool, or host adds forbidden attribution, stop before publishing and report the blocker. Do not bypass hooks, change tool configuration, amend existing commits, or rewrite published history without explicit authorization.
 
 Before committing, confirm required validation and scan the intended changes for secrets/artifacts. Do not include unrelated changes. Do not change Git identity, credentials, credential helpers, or authentication configuration.
 
