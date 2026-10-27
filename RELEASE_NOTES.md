@@ -1,5 +1,25 @@
 # Release notes
 
+## v0.3.3 — Strict coding-agent authorship rules
+
+Prepared for release after PR #13 is merged; not yet published to npm.
+
+### Improved
+
+- Strengthen the `git-workflow` skill, managed Copilot project instructions, and global engineering guardrails to prohibit `Co-authored-by:` trailers, equivalent co-author metadata, AI/agent signatures, and generated-by footers in commits and pull requests.
+- Cover indirect attribution through commit trailers, templates, API fields, and Git author/committer identity overrides.
+- Require inspection of complete proposed commit/PR messages before creation and new commits before pushing. If tooling inserts attribution, stop before publishing and report the blocker without bypassing hooks or rewriting existing commits.
+
+### Compatibility and upgrade
+
+- CLI targets, scopes, flags, copy/link modes, and runtime behavior are unchanged.
+- These are agent instructions; existing Git hooks do not deterministically enforce the authorship policy.
+- After publication, update installed skills with `npx dotnet-production-agent-skills@0.3.3 update --target all`. Add `--scope project` to refresh that project's managed Copilot instructions and installed skills. Review local edits before updating.
+
+### Validation
+
+All 31 skills passed `python3 scripts/validate_skills.py`; `git diff --check` passed. No runtime code changed.
+
 ## v0.3.2 — Repository-safe terminal recovery
 
 Released in [`dotnet-production-agent-skills@0.3.2`](https://www.npmjs.com/package/dotnet-production-agent-skills/v/0.3.2).

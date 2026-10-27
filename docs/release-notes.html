@@ -40,7 +40,25 @@
 
       <div class="release-list-heading"><span>Recent updates</span><span>Newest first</span></div>
 
-      <article class="release-entry release-entry-featured" aria-labelledby="v032-title">
+      <article class="release-entry release-entry-featured" aria-labelledby="v033-title">
+        <div class="release-entry-topline"><p class="release-status status-prepared">v0.3.3 · Prepared for release</p><span class="release-type">Agent guidance</span></div>
+        <h2 id="v033-title">Strict coding-agent authorship rules</h2>
+        <p class="release-summary">Prohibits co-author trailers and AI attribution in commits and pull requests. Prepared for release after <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/13">PR #13</a> is merged; not yet published to npm.</p>
+        <h3>Improved</h3>
+        <ul>
+          <li>Strengthen the Git workflow skill, managed Copilot instructions, and global guardrails to prohibit <code>Co-authored-by:</code> trailers, equivalent metadata, AI/agent signatures, and generated-by footers.</li>
+          <li>Cover indirect attribution through trailers, templates, API fields, and Git identity overrides.</li>
+          <li>Inspect complete proposed commit/PR messages before creation and new commits before pushing. Stop and report if tooling inserts attribution; do not bypass hooks or rewrite existing commits.</li>
+        </ul>
+        <h3>Compatibility and upgrade</h3>
+        <ul>
+          <li>CLI options and runtime behavior remain unchanged. These are agent instructions; existing hooks do not deterministically enforce this policy.</li>
+          <li>After publication, run <code>npx dotnet-production-agent-skills@0.3.3 update --target all</code>; add <code>--scope project</code> to refresh project skills and managed Copilot instructions. Review local edits first.</li>
+        </ul>
+        <p class="release-verification">Validation: all 31 skills and whitespace checks passed. No runtime code changed.</p>
+      </article>
+
+      <article class="release-entry" aria-labelledby="v032-title">
         <div class="release-entry-topline"><p class="release-status status-published"><a href="https://www.npmjs.com/package/dotnet-production-agent-skills/v/0.3.2">Released in v0.3.2</a></p><span class="release-type">Workflow &amp; documentation</span></div>
         <h2 id="v032-title">Repository-safe terminal recovery</h2>
         <p class="release-summary">Keeps failed-command recovery in the intended project and separates executable lookup from repository selection.</p>
