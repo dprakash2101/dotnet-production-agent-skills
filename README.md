@@ -32,6 +32,7 @@ A focused collection of `SKILL.md` guidance built to reduce repeated prompting, 
 - [Composition Workflows](#composition-workflows)
 - [Quality Policies & Standards](#quality-policies--standards)
 - [TypeScript CLI Reference](#typescript-cli-reference)
+  - [Git hook setup and troubleshooting](#reject-co-author-trailers-with-git)
   - [Installation Targets & Paths](#installation-targets--paths)
   - [Safety & Conflict Handling](#safety--conflict-handling)
 - [Host Compatibility](#host-compatibility)
@@ -295,17 +296,99 @@ The initial policy blocks force-push, destructive Git reset/clean/branch deletio
 
 ### Reject co-author trailers with Git
 
-After v0.3.3 is published, opt in from each repository:
+The optional Git `commit-msg` hook rejects commits containing a `Co-authored-by:` line, regardless of which agent or developer runs Git. It checks the final message, including messages supplied through `-m`, `-F`, templates, and `--trailer`. The comparison is case-insensitive and blocks human co-author trailers too. A rejected commit is not created, and the hook does not rewrite its message.
+
+#### 1. Install once per repository
+
+Requires Git and Node.js 18 or later. Node.js must remain available on the PATH used by your terminal or IDE when it runs Git.
+
+After **v0.3.3 is published**, run from your repository root:
 
 ```sh
 npx dotnet-production-agent-skills@0.3.3 git-hook
-# Preview, or select another repository
-npx dotnet-production-agent-skills@0.3.3 git-hook --project <path> --dry-run
 ```
 
-This installs an executable Git `commit-msg` hook that rejects case-insensitive `Co-authored-by:` lines in the final commit message, including `-m`, `-F`, template, and `--trailer` input. It rejects the commit without editing the message. Node.js must be available when Git runs. The installer respects Git's configured `core.hooksPath`, does not change Git configuration, and refuses to overwrite existing or modified hooks even with `--force`. For an existing hook manager, integrate the packaged `hooks/commit-msg` check manually. Skill install/update/uninstall does not manage this separately opted-in Git hook.
+Preview first, or select a repository explicitly:
 
-This local hook covers Git CLI commits from any agent or developer. It does not validate PR descriptions or GitHub/API-created commits, and `--no-verify` or disabling hooks can bypass it. Use a required server-side PR check to enforce the policy before merging API-created or bypassed commits. See [Git hook documentation](https://git-scm.com/docs/githooks#_commit_msg).
+```sh
+npx dotnet-production-agent-skills@0.3.3 git-hook --dry-run
+npx dotnet-production-agent-skills@0.3.3 git-hook --project "/path/to/repository"
+```
+
+For Windows Command Prompt, use your Windows project path:
+
+```bat
+npx dotnet-production-agent-skills@0.3.3 git-hook --project "C:\Projects\MyApi"
+```
+
+The command prints the installed hook path. It respects `core.hooksPath` and linked worktrees without changing Git configuration. If your configured hooks directory is shared between repositories, the installed hook applies wherever that directory is used. Re-running the command verifies an identical installed hook. A different existing hook is preserved, even with `--force`.
+
+This is a separate opt-in: `install`, `update`, and `uninstall` for agent skills do not install, update, or remove this Git hook. Each developer or agent checkout needs its own setup; cloning a repository does not automatically activate local Git hooks.
+
+#### 2. Commit normally
+
+No extra flag or agent prompt is needed. When a message contains a co-author trailer, Git exits with an error:
+
+```text
+Commit rejected: Co-authored-by trailers are forbidden. Remove the attribution and retry; do not bypass the hook.
+```
+
+Remove the trailer from the proposed message and run the commit again. For agents, instruct them to correct the message and retry normally. Do not use `--no-verify` to work around the rejection.
+
+#### 3. Check the hook without creating a commit
+
+From your repository root, find the active hook path:
+
+```sh
+git rev-parse --git-path hooks/commit-msg
+```
+
+Create a temporary file named `hook-test-message.txt` containing:
+
+```text
+Test the authorship policy
+
+Co-authored-by: Example Agent <agent@example.invalid>
+```
+
+Run the following, replacing the first quoted path with the path printed by Git:
+
+```sh
+node "<active-hook-path>" hook-test-message.txt
+```
+
+Expect the rejection message and exit code **1**. Remove the co-author line and run it again; expect no output and exit code **0**. Delete the temporary test file afterward. This check creates no commits.
+
+#### Existing hooks and hook managers
+
+If installation reports `Existing commit-msg hook preserved`, keep your existing hook. Copy the packaged [commit-message check](hooks/commit-msg) to a stable project path, for example `.githooks/no-coauthors.cjs`, and invoke it from your existing commit-message hook before that hook returns success.
+
+For a shell-based hook or Husky commit-message hook, the integration line is:
+
+```sh
+node .githooks/no-coauthors.cjs "$1" || exit $?
+```
+
+Pass Git's original message-file argument and propagate a nonzero exit code. Keep all existing checks; do not replace the hook manager's configuration or reference a temporary npm-cache path.
+
+#### Troubleshooting and removal
+
+| Symptom | What to check |
+| :--- | :--- |
+| `git-hook` is an unknown command | Confirm v0.3.3 has been published and use the version-pinned command above. |
+| Git says this is not a repository | Run inside a Git working tree or provide `--project`. |
+| Node is unavailable when committing | Ensure the IDE/Git process can resolve Node.js on its PATH. A terminal and an IDE can have different environments. |
+| Existing hook conflict | Use the manual integration above. The installer deliberately does not replace existing hooks. |
+| The hook appears inactive | Inspect the path returned by `git rev-parse --git-path hooks/commit-msg`. Check that it is executable on POSIX, that no per-command hook-path override is in use, and that the commit is made through local Git. |
+| A new package version contains a hook update | The installed hook is a copy. Review the new check and update your managed integration manually; the installer preserves differing existing files. |
+
+To remove a standalone installation, locate the active hook with `git rev-parse --git-path hooks/commit-msg` and inspect it. Delete only the hook bearing the `dotnet-production-agent-skills: reject co-author attribution` marker if it is still the standalone check you installed. For a hook-manager integration, remove only the added invocation and its copied check. Preserve unrelated hooks and Git configuration.
+
+#### Enforcement limits
+
+The hook checks co-author trailer lines in local Git commits. AI signatures, generated-by footers, and PR titles/descriptions remain covered by agent instructions. GitHub/API-created commits do not run local Git hooks. Local hooks can also be bypassed with `--no-verify` or disabled through Git configuration. For merge enforcement, add a server-side PR check and require it in branch protection. See the [Git hook documentation](https://git-scm.com/docs/githooks#_commit_msg).
+
+### Terminal recovery and managed Copilot instructions
 
 Terminal recovery guidance keeps commands anchored to the intended repository, separates executable lookup from repository selection, and forbids moving into Git/tool installation directories as a workaround. Copilot project instructions include the critical rules so they are available even before the focused `safe-terminal` skill is selected. Skills and instructions guide the model; the existing hooks do not enforce these directory/recovery rules. See the skill's [shell recovery examples](skills/safe-terminal/references/shell-recovery.md) for diagnostics and primary sources.
 

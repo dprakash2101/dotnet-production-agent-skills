@@ -1457,3 +1457,14 @@ code {
   .release-type { order: -1; }
 }
 @media (max-width: 400px) { .release-hero-mark { display: none; } .release-list-heading span + span { font-size: 0.62rem; } }
+
+/* Hook setup guide */
+.hook-guide pre { margin: 16px 0; padding: 18px; overflow-x: auto; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-secondary); color: var(--text-primary); line-height: 1.65; font-size: 0.86rem; }
+.hook-guide .release-entry h2 { margin-top: 28px; }
+.hook-guide .release-entry > h2:first-of-type { margin-top: 0; }
+.hook-guide .release-entry p { line-height: 1.75; }
+.hook-guide .hook-table { overflow-x: auto; margin: 20px 0; }
+.hook-guide table { width: 100%; border-collapse: collapse; text-align: left; }
+.hook-guide th, .hook-guide td { padding: 14px; vertical-align: top; border-bottom: 1px solid var(--border-color); color: var(--text-secondary); line-height: 1.65; }
+.hook-guide th { color: var(--text-primary); }
+.hook-guide td:first-child { min-width: 180px; }

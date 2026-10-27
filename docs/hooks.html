@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hook setup guide — .NET Production Agent Skills</title>
+<meta name="description" content="Install agent command guardrails and the Git commit-message hook, test co-author rejection, integrate existing hooks, and troubleshoot safely.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="navbar"><div class="container nav-container">
+<a href="index.html" class="nav-brand"><div class="brand-icon">.NET</div><span>.NET Agent Skills</span></a>
+<nav class="nav-links" aria-label="Main navigation"><a href="index.html#skills" class="nav-link">Skills Catalog</a><a href="index.html#install" class="nav-link">CLI Installer</a><a href="hooks.html" class="nav-link" aria-current="page">Hook Guide</a><a href="release-notes.html" class="nav-link">Release Notes</a></nav>
+<div class="nav-actions"><button id="theme-toggle-btn" class="theme-toggle-btn" type="button" aria-label="Switch to dark theme" aria-pressed="false"><span class="theme-toggle-icon" aria-hidden="true">◐</span><span class="theme-toggle-label">Dark</span></button></div>
+</div></header>
+<main id="main-content" class="release-main"><div class="container hook-guide">
+<section class="release-hero"><div class="release-hero-copy"><p class="section-kicker">Setup and troubleshooting</p><h1>Hooks, <span>step by step.</span></h1><p>Set up agent command guardrails and stop co-author trailers at commit time. The optional Git hook is available after v0.3.3 is published.</p><a href="https://github.com/dprakash2101/dotnet-production-agent-skills#reject-co-author-trailers-with-git" class="release-source-link">Read the guide on GitHub →</a></div></section>
+<section class="release-entry">
+<h2>Choose the hook you need</h2>
+<p>Agent command guardrails inspect supported agent tool calls. The separate Git hook inspects commit messages. Install both if you want both protections.</p>
+<h3>Agent command guardrails</h3>
+<p>Project-scope installs configure native hooks for the selected agent. To install the supported adapters together:</p>
+<pre><code>npx dotnet-production-agent-skills install --target all --scope project
+npx dotnet-production-agent-skills doctor --target all --scope project</code></pre>
+<p>Use <code>--target copilot</code>, <code>codex</code>, <code>claude</code>, <code>cursor</code>, or <code>antigravity</code> to select one host. Add <code>--dry-run</code> before installing to preview changes. User-scope skill installs do not install project hooks.</p>
+<p>The existing agent guard blocks force-push, destructive Git operations, broad recursive deletion, and direct access to common credential files. It does not inspect Git's final commit message. Uninstall managed agent hooks with <code>npx dotnet-production-agent-skills uninstall --target all --scope project</code>; unrelated supported host hooks are preserved.</p>
+</section>
+<article class="release-entry"><p class="release-status status-prepared">Git hook · v0.3.3</p><h2>Reject co-author trailers with Git</h2>
+<p>The optional Git <code>commit-msg</code> hook rejects commits containing a <code>Co-authored-by:</code> line, regardless of which agent or developer runs Git. It checks the final message, including messages supplied through <code>-m</code>, <code>-F</code>, templates, and <code>--trailer</code>. The comparison is case-insensitive and blocks human co-author trailers too. A rejected commit is not created, and the hook does not rewrite its message.</p>
+<h2>1. Install once per repository</h2>
+<p>Requires Git and Node.js 18 or later. Node.js must remain available on the PATH used by your terminal or IDE when it runs Git.</p>
+<p>After <strong>v0.3.3 is published</strong>, run from your repository root:</p>
+<pre><code>npx dotnet-production-agent-skills@0.3.3 git-hook</code></pre>
+<p>Preview first, or select a repository explicitly:</p>
+<pre><code>npx dotnet-production-agent-skills@0.3.3 git-hook --dry-run
+npx dotnet-production-agent-skills@0.3.3 git-hook --project &quot;/path/to/repository&quot;</code></pre>
+<p>For Windows Command Prompt, use your Windows project path:</p>
+<pre><code>npx dotnet-production-agent-skills@0.3.3 git-hook --project &quot;C:\Projects\MyApi&quot;</code></pre>
+<p>The command prints the installed hook path. It respects <code>core.hooksPath</code> and linked worktrees without changing Git configuration. If your configured hooks directory is shared between repositories, the installed hook applies wherever that directory is used. Re-running the command verifies an identical installed hook. A different existing hook is preserved, even with <code>--force</code>.</p>
+<p>This is a separate opt-in: <code>install</code>, <code>update</code>, and <code>uninstall</code> for agent skills do not install, update, or remove this Git hook. Each developer or agent checkout needs its own setup; cloning a repository does not automatically activate local Git hooks.</p>
+<h2>2. Commit normally</h2>
+<p>No extra flag or agent prompt is needed. When a message contains a co-author trailer, Git exits with an error:</p>
+<pre><code>Commit rejected: Co-authored-by trailers are forbidden. Remove the attribution and retry; do not bypass the hook.</code></pre>
+<p>Remove the trailer from the proposed message and run the commit again. For agents, instruct them to correct the message and retry normally. Do not use <code>--no-verify</code> to work around the rejection.</p>
+<h2>3. Check the hook without creating a commit</h2>
+<p>From your repository root, find the active hook path:</p>
+<pre><code>git rev-parse --git-path hooks/commit-msg</code></pre>
+<p>Create a temporary file named <code>hook-test-message.txt</code> containing:</p>
+<pre><code>Test the authorship policy
+
+Co-authored-by: Example Agent &lt;agent@example.invalid&gt;</code></pre>
+<p>Run the following, replacing the first quoted path with the path printed by Git:</p>
+<pre><code>node &quot;&lt;active-hook-path&gt;&quot; hook-test-message.txt</code></pre>
+<p>Expect the rejection message and exit code <strong>1</strong>. Remove the co-author line and run it again; expect no output and exit code <strong>0</strong>. Delete the temporary test file afterward. This check creates no commits.</p>
+<h2>Existing hooks and hook managers</h2>
+<p>If installation reports <code>Existing commit-msg hook preserved</code>, keep your existing hook. Copy the packaged <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/blob/main/hooks/commit-msg">commit-message check</a> to a stable project path, for example <code>.githooks/no-coauthors.cjs</code>, and invoke it from your existing commit-message hook before that hook returns success.</p>
+<p>For a shell-based hook or Husky commit-message hook, the integration line is:</p>
+<pre><code>node .githooks/no-coauthors.cjs &quot;$1&quot; || exit $?</code></pre>
+<p>Pass Git's original message-file argument and propagate a nonzero exit code. Keep all existing checks; do not replace the hook manager's configuration or reference a temporary npm-cache path.</p>
+<h2>Troubleshooting and removal</h2>
+<div class="hook-table"><table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td><code>git-hook</code> is an unknown command</td><td>Confirm v0.3.3 has been published and use the version-pinned command above.</td></tr><tr><td>Git says this is not a repository</td><td>Run inside a Git working tree or provide <code>--project</code>.</td></tr><tr><td>Node is unavailable when committing</td><td>Ensure the IDE/Git process can resolve Node.js on its PATH. A terminal and an IDE can have different environments.</td></tr><tr><td>Existing hook conflict</td><td>Use the manual integration above. The installer deliberately does not replace existing hooks.</td></tr><tr><td>The hook appears inactive</td><td>Inspect the path returned by <code>git rev-parse --git-path hooks/commit-msg</code>. Check that it is executable on POSIX, that no per-command hook-path override is in use, and that the commit is made through local Git.</td></tr><tr><td>A new package version contains a hook update</td><td>The installed hook is a copy. Review the new check and update your managed integration manually; the installer preserves differing existing files.</td></tr></tbody></table></div>
+<p>To remove a standalone installation, locate the active hook with <code>git rev-parse --git-path hooks/commit-msg</code> and inspect it. Delete only the hook bearing the <code>dotnet-production-agent-skills: reject co-author attribution</code> marker if it is still the standalone check you installed. For a hook-manager integration, remove only the added invocation and its copied check. Preserve unrelated hooks and Git configuration.</p>
+<h2>Enforcement limits</h2>
+<p>The hook checks co-author trailer lines in local Git commits. AI signatures, generated-by footers, and PR titles/descriptions remain covered by agent instructions. GitHub/API-created commits do not run local Git hooks. Local hooks can also be bypassed with <code>--no-verify</code> or disabled through Git configuration. For merge enforcement, add a server-side PR check and require it in branch protection. See the <a href="https://git-scm.com/docs/githooks#_commit_msg">Git hook documentation</a>.</p>
+
+</article>
+</div></main>
+<footer class="footer"><div class="container footer-content"><div class="footer-credits">Created &amp; maintained by <strong>Devi Prakash</strong>. Released under the MIT License.</div><div class="footer-links"><a href="index.html">Home</a><a href="release-notes.html">Release Notes</a><a href="https://github.com/dprakash2101/dotnet-production-agent-skills">GitHub</a></div></div></footer>
+<script src="app.js"></script>
+</body>
+</html>
