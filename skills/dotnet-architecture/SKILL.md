@@ -20,3 +20,5 @@ Controller -> business/application service -> data or external integration
 For a major change, define affected components and contracts, concurrency and failure boundaries, configuration, observability, migration/rollout needs, and test seams before implementation. The valid change set may be large, but unrelated cleanup remains out of scope.
 
 Read [references/design-checks.md](references/design-checks.md) only when designing a new integration, background process, or public API.
+
+Compare candidate designs against existing boundaries, operational complexity and change scope. Vertical slices, layered services and other established styles can all be appropriate depending on the repository.

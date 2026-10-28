@@ -14,3 +14,5 @@ Distinguish validation/domain failures, authentication/authorization, missing re
 Define one layer to own final exception logging. A lower layer may log a failure it fully handles or add diagnostic context, but avoid logging and rethrowing the same exception at every layer. Include the exception object in structured internal logs and keep correlation/trace identifiers.
 
 Test recovery, propagation, translation, cleanup, and cancellation behavior at the owning boundary. For a customer-facing HTTP API, read [references/customer-facing-api.md](references/customer-facing-api.md) before designing or changing its exception mapping.
+
+Exercise representative domain errors, cancellation, timeouts and unexpected failures at the owning boundary. Verify the external response is sanitized and the internal error event is not duplicated.

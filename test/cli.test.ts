@@ -409,3 +409,42 @@ test("doctor accepts multiline YAML frontmatter and rejects invalid metadata", a
   assert.deepEqual(await validateSkills(root, ["good-skill"]), []);
   assert.match((await validateSkills(root, ["bad-skill"])).join(" "), /invalid YAML/);
 });
+
+test("hook updates preserve sibling handlers and reject modified scripts before installation", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "hook-preserve-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "hook-preserve-project-"));
+  assert.equal(runAt(home, project, "install", "--target", "claude", "--project", project).status, 0);
+  const config = path.join(project, ".claude", "settings.json");
+  const data = JSON.parse(await readFile(config, "utf8"));
+  data.hooks.PreToolUse[0].hooks.push({ type: "command", command: "team-check" });
+  await writeFile(config, JSON.stringify(data));
+  assert.equal(runAt(home, project, "update", "--target", "claude", "--project", project).status, 0);
+  assert.match(await readFile(config, "utf8"), /team-check/);
+  const guard = path.join(project, ".agent-guardrails", "guard.mjs");
+  await writeFile(guard, `${await readFile(guard, "utf8")}\n// custom\n`);
+  const result = runAt(home, project, "update", "--target", "claude", "--project", project);
+  assert.notEqual(result.status, 0);
+  assert.match(await readFile(guard, "utf8"), /custom/);
+});
+
+test("all-target uninstall preserves unrelated files in guard directory", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "hook-extra-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "hook-extra-project-"));
+  assert.equal(runAt(home, project, "install", "--target", "all", "--project", project).status, 0);
+  const extra = path.join(project, ".agent-guardrails", "team-notes.txt");
+  await writeFile(extra, "keep");
+  assert.equal(runAt(home, project, "uninstall", "--target", "all", "--project", project).status, 0);
+  assert.equal(await readFile(extra, "utf8"), "keep");
+});
+
+test("copilot hook installation retains existing custom entries", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "hook-copilot-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "hook-copilot-project-"));
+  const config = path.join(project, ".github", "hooks", "dotnet-production-agent-skills.json");
+  await mkdir(path.dirname(config), { recursive: true });
+  await writeFile(config, JSON.stringify({ version: 1, hooks: { sessionStart: [{ type: "command", command: "team-check" }] } }));
+  assert.equal(runAt(home, project, "install", "--target", "copilot", "--project", project).status, 0);
+  assert.match(await readFile(config, "utf8"), /team-check/);
+  assert.equal(runAt(home, project, "uninstall", "--target", "copilot", "--project", project).status, 0);
+  assert.match(await readFile(config, "utf8"), /team-check/);
+});

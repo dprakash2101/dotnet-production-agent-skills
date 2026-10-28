@@ -49,3 +49,5 @@ Never silently substitute a different operation. Ask before a correction changes
 ## Destructive-action safety
 
 For destructive or hard-to-recover actions, resolve and display exact targets first, prefer a reversible operation, and obtain approval when scope is not already explicit. Never use a home directory, repository root, filesystem root, or an unvalidated variable as a recursive deletion target.
+
+For paths containing spaces, pass arguments separately where possible and verify the intended working directory before retrying. A status request or authorized action should not trigger unrelated environment changes.

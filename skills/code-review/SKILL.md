@@ -12,3 +12,5 @@ Prioritize findings by impact: correctness/regression, security/data exposure, A
 Each finding should state the concrete failure mode, conditions that trigger it, impact, and precise file/line evidence. Avoid vague preferences, speculative claims without a plausible path, and requests for unrelated cleanup. Check whether tests already cover the concern before reporting it.
 
 Return findings in severity order. If none are found, say so and identify meaningful residual risks or unverified validation. A review request authorizes inspection and reporting, not edits, commits, or pushes.
+
+For each finding, describe the triggering condition, concrete impact, and precise source location. Prefer a small set of demonstrated defects over speculative style comments.

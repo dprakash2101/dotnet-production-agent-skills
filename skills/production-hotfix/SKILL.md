@@ -15,3 +15,5 @@ Prioritize containment, predictability, backward compatibility, observability, a
 6. Inspect the complete diff and report residual risk and any validation that production conditions prevented.
 
 Urgency changes breadth and speed, not safety. A temporary mitigation must be clearly identified, bounded, and not silently presented as a permanent design.
+
+Record whether the change is a temporary mitigation or final fix, the rollout and recovery signals, rollback trigger, residual risk and follow-up owner.

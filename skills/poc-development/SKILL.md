@@ -12,3 +12,5 @@ Unit tests and production hardening are optional for a POC. Prioritize executabl
 Label shortcuts and unknowns: security, resilience, error handling, scalability, observability, migration, compatibility, operations, and test gaps. Do not silently classify ordinary work as a POC to avoid tests.
 
 If the result is promoted to production, reassess architecture and contracts, remove shortcuts, add normal automated tests and validation, and review the result as production code rather than incrementally blessing the prototype.
+
+Record hypothesis, setup, observed result and promotion blockers in a reproducible handoff. Reassess any shortcut before production adoption.

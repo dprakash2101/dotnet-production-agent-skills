@@ -20,3 +20,5 @@ Do not add custom retries merely because transient failures are possible. Add th
 Read only the matching provider reference: [PostgreSQL](references/postgresql.md) or [Oracle](references/oracle.md).
 
 For EF Core work, load `ef-core-safety` for ORM behavior. Load this skill and only the matching provider reference as well when the task depends on provider-specific SQL, type mapping, connection, transaction, or resilience semantics; do not load both for provider-agnostic EF Core changes.
+
+Use provider-representative tests for transaction, null, precision, cancellation and pagination behavior where practical; explicitly record provider limitations if the test environment cannot reproduce them.

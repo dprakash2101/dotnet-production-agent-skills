@@ -14,3 +14,5 @@ When the latest explicit instruction changes the objective:
 5. Define the minimum files and commands needed for the new direction, then proceed narrowly.
 
 Do not repeatedly summarize the abandoned task or reload files solely because they mattered before. If the host supports context compaction, use it when stale context is large enough to impair the new task; preserve a short list of relevant verified facts first.
+
+A status question or additional constraint does not by itself replace an active objective. Preserve the current task unless the user clearly redirects it; keep a concise handoff of decisions, modified files and remaining verification.

@@ -21,3 +21,5 @@ Model for document access patterns, not relational normalization. Choose collect
 Do not add custom retries merely because failures can be transient. Add them only when explicitly requested or required by existing architecture, and prefer client-supported behavior. Before retrying, account for transaction callback reruns, write idempotency, preconditions, duplicate side effects, timeout budget, bounded attempts, cancellation, and permanent error classification.
 
 Test serialization compatibility, absent/null fields, transaction reruns, concurrency preconditions, pagination, and cost-significant query behavior when applicable.
+
+Test transaction callback reruns and cursor boundaries with the emulator or appropriate isolated environment when feasible. Verify server-side IAM and application authorization independently of document structure.

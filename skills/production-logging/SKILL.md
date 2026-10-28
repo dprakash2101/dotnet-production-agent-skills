@@ -22,3 +22,5 @@ Never log credentials, tokens, API keys, connection strings, authentication head
 Define one layer to own the exception event. Lower layers may add context by wrapping or enriching traces, but should not repeatedly log and rethrow the same failure. Include exceptions as exception arguments so stacks remain available internally. Preserve trace/correlation IDs across boundaries and prefer OpenTelemetry spans/metrics for high-volume timing or cardinality that does not belong in logs.
 
 Test/red-team log output when a change touches sensitive input or centralized failure handling. Verify useful fields exist and prohibited data does not.
+
+Check trace propagation across HTTP and message boundaries, and assert sensitive values are absent from logs and telemetry in tests touching those paths.

@@ -20,3 +20,5 @@ Check for accidental deletion, unrelated formatting/renaming/refactoring, genera
 Revert only accidental agent-created changes, and only when ownership is clear. Never discard or overwrite user changes because they are unrelated. If changes overlap and cannot be safely separated, stop and explain the conflict.
 
 Finish when the requested behavior is present, unrelated behavior is preserved, appropriate tests/validation are complete or honestly reported, and no unnecessary file remains changed. Stop there; do not continue cleanup.
+
+Inspect relevant untracked files separately: ordinary git diff does not include them. Check staged and unstaged changes and assess generated or binary files when they are part of the requested deliverable.

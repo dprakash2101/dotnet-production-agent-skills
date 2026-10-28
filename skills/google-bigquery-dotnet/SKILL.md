@@ -21,3 +21,5 @@ Do not add custom query/job retries merely because failures can be transient. Ad
 Before finalizing, inspect estimated/scanned bytes or repository query safeguards when available, and test mapping boundaries, nulls, pagination, cancellation, and date/time semantics relevant to the query.
 
 Read [references/query-safety.md](references/query-safety.md) for job, pagination, and date/time decision details.
+
+Where supported by the installed client and repository, use query dry runs or maximum-bytes controls to bound cost. Preserve job identity when investigating ambiguous completion.

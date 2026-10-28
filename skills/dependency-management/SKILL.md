@@ -24,3 +24,5 @@ Establish the current and target versions, affected projects, target .NET compat
 For a major version, identify required code/configuration migrations before editing. Inspect restore output for downgrades, conflicts, duplicate transitive versions, analyzer changes, and unexpected output assets. For SDK/runtime upgrades, include deployment environment, container/base image, hosting bundle, SDK pinning, serialization, and changed defaults.
 
 Keep dependency work separate from unrelated refactoring. Validate the affected build and behavior, and document unresolved compatibility or rollback concerns.
+
+Inspect global.json, target frameworks, central package versions and lock files before planning an upgrade. Use repository-supported audit and restore commands; record feed or environment limitations.

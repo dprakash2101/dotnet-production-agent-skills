@@ -13,14 +13,7 @@ For a fresh preflight, prefer one combined inspection such as `git status --shor
 
 Preserve unrelated user changes and stage explicit intended paths or hunks only. After staging, use one focused staged check that detects whitespace errors and confirms the staged scope, such as `git diff --cached --check --stat`. Expand to the full staged diff only when it has not already been reviewed or the staged scope is surprising.
 
-Branch names:
-
-- `feature/<JIRA-ID>/<meaningful-name>`
-- `fix/<JIRA-ID>/<meaningful-name>`
-
-Reuse a Jira ID from the current branch or user input. Never invent one; ask if the requested operation requires an unavailable ID.
-
-Commit messages begin with the Jira ID, for example `XDCI-12345 Add order webhook retry handling`.
+Follow the repository's branch and commit naming rules. If the team requires a Jira ID, reuse one from the current branch or user input and never invent one. Ask only if the requested operation requires an unavailable identifier.
 
 ## Strict authorship policy
 

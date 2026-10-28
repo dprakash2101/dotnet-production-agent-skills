@@ -16,3 +16,5 @@ Follow: symptom -> flow -> data -> divergence -> root cause -> minimal fix -> im
 7. If implementation is authorized, make the smallest fix that addresses the cause and add a regression test when practical.
 
 Do not fix unrelated warnings or failures. Report uncertainty, reproduction gaps, and unrelated failures explicitly.
+
+Keep a compact evidence ledger separating observed facts, competing hypotheses, checks performed, and conclusions. Report missing reproduction evidence rather than presenting a plausible hypothesis as verified.

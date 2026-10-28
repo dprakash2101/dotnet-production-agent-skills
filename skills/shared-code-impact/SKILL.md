@@ -14,3 +14,5 @@ Before editing shared code:
 5. Test the changed scenario and representative unaffected consumers, especially default behavior.
 
 Existing unusual or duplicated code is not permission to clean it up. If impact cannot be bounded with available evidence, state the uncertainty before making a high-blast-radius change.
+
+For high-impact changes, record a compact matrix of consumer, current contract, intended change, unaffected scenario and verification evidence.

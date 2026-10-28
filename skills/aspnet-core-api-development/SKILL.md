@@ -27,3 +27,5 @@ Return the established stable customer-facing validation and error shape. Never 
 Propagate cancellation through service and I/O boundaries. Apply rate limits, idempotency, feature flags, health behavior, and telemetry only when the endpoint's requirements or repository architecture call for them.
 
 Test observable HTTP behavior: valid request, header/request validation, authorization boundaries, important business outcomes, sanitized failures, serialization, and cancellation where relevant. Always compose with `api-contract-safety` and `exception-handling` for the public contract and failure boundary. Load `production-logging` and provider-specific skills only when those concerns are part of the endpoint.
+
+Use repository-supported HTTP integration tests for actual routing, serialization, authorization and error responses when these boundaries change.

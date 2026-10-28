@@ -7,7 +7,7 @@ description: Use when adding or improving focused .NET unit tests for changed bu
 
 Follow the test framework, assertion style, mocking library, naming, fixture, and data-builder conventions already present. Do not introduce a competing framework without necessity.
 
-Aim for roughly 90-100% meaningful coverage of new or materially changed testable production business logic when practical, not the legacy repository. Coverage is a signal: maximize useful behavioral confidence with maintainable tests and reasonable CI time, not raw test count or percentage.
+Follow the repository or team coverage target for new or materially changed testable business logic when one exists. Coverage is a signal: maximize useful behavioral confidence with maintainable tests and reasonable CI time, not raw test count or percentage.
 
 Cover applicable happy paths, validation, boundaries, null/empty cases, important branches, error behavior, and customer/region/flow-specific conditions. When shared behavior changes, verify both changed and representative unchanged consumers.
 
@@ -20,3 +20,5 @@ Do not repeatedly test framework behavior, duplicate the same branch through imp
 Run the narrowest affected test first. Consider CI cost before adding slow combinations, large fixtures, or redundant integration coverage. Do not rewrite unrelated tests or mask a product defect by weakening assertions.
 
 For a clearly user- or repository-identified POC, tests are optional; validate feasibility instead. Restore normal test expectations when experimental code becomes production code.
+
+Use established test seams for time, randomness, cancellation and concurrency. Exercise behavior at stable boundaries; use integration tests where provider or HTTP semantics matter.

@@ -28,3 +28,5 @@ Choose the smallest matching workflow. Do not turn classification into a deliver
 Add `api-contract-safety`, `exception-handling`, `production-logging`, `ef-core-safety`, `distributed-workflows`, `dependency-management`, or `production-debugging` only when their subject is actually involved. Never preload unrelated cloud or database provider guidance. End code-changing work with `diff-review` and proportionate `targeted-validation`.
 
 For every category, preserve unrelated behavior, constrain the blast radius, and inspect shared dependencies. Task size changes investigation and validation depth, never safety standards.
+
+For outbound HTTP integration, load `http-client-integrations`; for boundary tests load `integration-testing-dotnet`. Load `observability-dotnet`, `performance-diagnostics-dotnet`, `background-services-dotnet`, or `deployment-readiness-dotnet` only when the specific task involves those concerns.

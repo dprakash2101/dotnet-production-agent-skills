@@ -17,3 +17,5 @@ Understand the entity model, mappings, query shape, indexes, tracking needs, tra
 Do not introduce a custom retry loop merely because a database failure might be transient. Add retry behavior only when explicitly requested or already required/configured by the architecture, prefer the provider's EF Core execution strategy, and verify idempotency, transaction boundaries, duplicate-write safety, timeout budget, bounded attempts, cancellation, and permanent-error classification.
 
 Validate query behavior and SQL/performance when risk warrants it. Test provider-specific behavior with the appropriate provider; do not assume an in-memory provider reproduces relational semantics.
+
+For production schema changes, prefer an expand/backfill/contract sequence where mixed application versions must coexist. Review backfill batching, locks, resumability and compatibility before deployment. Verify migrations and constraints against the actual provider when practical.

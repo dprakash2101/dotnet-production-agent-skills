@@ -292,6 +292,7 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
   }
   if (options.scope === "project") {
     await Promise.all(hookTargets(options.target).map((target) => inspectHooks(options.project, PACKAGE_ROOT, target)));
+    await Promise.all(hookTargets(options.target).map((target) => changeHooks(options.project, PACKAGE_ROOT, target, "install", true)));
   }
   const packaged = new Set(skills);
   const packageJson = JSON.parse(await readFile(path.join(PACKAGE_ROOT, "package.json"), "utf8")) as { version: string };
