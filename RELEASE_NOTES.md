@@ -1,5 +1,16 @@
 # Release notes
 
+## Unreleased — Cross-tool terminal recovery
+
+- Add an opt-in direct stdio MCP `run_process` tool to avoid interactive-terminal typing, managed project setup/removal, and session redirection after observed or suspected corruption.
+- Add shared evidence-based diagnosis across command ecosystems, session-scoped unchanged-retry tracking, capability reporting, and an explicit shell-free command runner.
+- Package and preserve the complete hook runtime bundle during updates and uninstall.
+- Reject literal `^U`/Ctrl+U command prefixes with a `safe-terminal` correction message.
+- Detect common explicit tool-installation directory selections in terminal arguments, navigation, and Git directory options; allow fully qualified executable invocation from the project.
+- Install Copilot post-tool feedback for failed commands without copying raw output or executing replacement commands.
+- Anchor Copilot hook execution to the repository root; migrate the exact previous generated handler while preserving customized handlers and unrelated hooks.
+- Validation: TypeScript build and 37 skills passed; 79 automated tests passed and one Windows-only test was skipped on Linux. Coverage includes installed hook execution, migration, idempotency, uninstall, corrective messages, and allowed commands. Live Copilot activation remains untested.
+
 ## v0.4.0 — Safer hook management and expanded .NET skills
 
 Prepared for release with [PR #15](https://github.com/dprakash2101/dotnet-production-agent-skills/pull/15); not yet published to npm.

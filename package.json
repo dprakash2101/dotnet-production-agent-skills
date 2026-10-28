@@ -26,6 +26,7 @@
     "skills",
     "RELEASE_NOTES.md",
     "README.md",
+    "docs/terminal-recovery.md",
     "LICENSE"
   ],
   "engines": {
@@ -37,7 +38,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test dist/test/cli.test.js scripts/*.test.mjs",
+    "test": "npm run build && node --test dist/test/*.test.js scripts/*.test.mjs",
     "validate": "python3 scripts/validate_skills.py && npm test",
     "prepack": "npm run build"
   },
