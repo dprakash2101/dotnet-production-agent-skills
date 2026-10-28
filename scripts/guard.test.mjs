@@ -16,6 +16,14 @@ test('guard catches common destructive command variants', () => {
     assert.equal(decide(command), 'deny', command);
   }
 });
+test('guard blocks PowerShell broad paths with reordered flags and quoting', () => {
+  for (const target of ['$HOME', '~', '/', '$env:USERPROFILE']) {
+    for (const command of [`Remove-Item -Recurse -Force ${target}`, `Remove-Item '${target}' -Force -Recurse`]) {
+      assert.equal(decide(command), 'deny', command);
+    }
+  }
+  assert.equal(decide('Remove-Item -Recurse -Force ./build'), 'allow');
+});
 test('guard permits ordinary commands and example environment files', () => {
   for (const command of ['git -C /repo status', 'dotnet test', 'cat .env.example']) assert.equal(decide(command), 'allow', command);
 });

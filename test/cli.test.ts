@@ -427,6 +427,25 @@ test("hook updates preserve sibling handlers and reject modified scripts before 
   assert.match(await readFile(guard, "utf8"), /custom/);
 });
 
+test("unmodified legacy guard migrates while customized legacy guard is preserved", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "hook-legacy-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "hook-legacy-project-"));
+  assert.equal(runAt(home, project, "install", "--target", "claude", "--project", project).status, 0);
+  const guard = path.join(project, ".agent-guardrails", "guard.mjs");
+  const legacy = await readFile(path.join(repository, "test", "fixtures", "legacy-guard.mjs"), "utf8");
+  await writeFile(guard, legacy);
+  await rm(`${guard}.sha256`);
+  const result = runAt(home, project, "update", "--target", "claude", "--project", project);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(await readFile(guard, "utf8"), await readFile(path.join(repository, "hooks", "guard.mjs"), "utf8"));
+  assert.match(await readFile(`${guard}.sha256`, "utf8"), /^[a-f0-9]{64}\n$/);
+  await writeFile(guard, `${legacy}\n// custom\n`);
+  await rm(`${guard}.sha256`);
+  const rejected = runAt(home, project, "update", "--target", "claude", "--project", project, "--force", "--yes");
+  assert.notEqual(rejected.status, 0);
+  assert.equal(await readFile(guard, "utf8"), `${legacy}\n// custom\n`);
+});
+
 test("all-target uninstall preserves unrelated files in guard directory", async () => {
   const home = await mkdtemp(path.join(tmpdir(), "hook-extra-home-"));
   const project = await mkdtemp(path.join(tmpdir(), "hook-extra-project-"));

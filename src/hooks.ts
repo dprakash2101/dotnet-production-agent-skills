@@ -9,6 +9,8 @@ const OWNER = "dotnet-production-agent-skills";
 const COMMAND = "node .agent-guardrails/guard.mjs";
 const SCRIPT_DIRECTORY = ".agent-guardrails";
 const SCRIPT_NAME = "guard.mjs";
+// Exact SHA-256 of the unmodified guard shipped before ownership markers.
+const LEGACY_GUARD_HASHES = new Set(["5286623026e5adcf9bfd0cac0265aed0fa91186cb8294986201441b7354f685b"]);
 
 interface JsonObject { [key: string]: unknown }
 
@@ -142,7 +144,8 @@ export async function changeHooks(projectRoot: string, packageRoot: string, targ
   try { recorded = (await readFile(marker, "utf8")).trim(); } catch (error) {
     if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
   }
-  if (action === "install" && script !== null && !scriptMatches && hash(script) !== recorded) {
+  const legacyMatch = script !== null && !recorded && LEGACY_GUARD_HASHES.has(hash(script));
+  if (action === "install" && script !== null && !scriptMatches && hash(script) !== recorded && !legacyMatch) {
     throw new Error(`Modified or unmanaged guard script preserved: ${files.script}`);
   }
   if (action === "install") {

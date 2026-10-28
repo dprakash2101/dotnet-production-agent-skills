@@ -19,12 +19,12 @@ Prepared for release with [PR #15](https://github.com/dprakash2101/dotnet-produc
 ### Compatibility and upgrade
 
 - Existing targets, scopes, modes, and CLI options remain supported. Project hooks are a best-effort safeguard, not a sandbox; verify that your agent host loads and trusts them.
-- Older installations with a modified guard script and no ownership record require manual review. Uninstall preserves an untracked legacy script.
+- Unmodified guards from the previous release migrate automatically. Customized or unrecognized guards without an ownership record require manual review; uninstall preserves untracked legacy scripts.
 - After publication, update user skills with `npx dotnet-production-agent-skills@0.4.0 update --target all`. For a project installation, add `--scope project` and review local changes before updating.
 
 ### Validation
 
-`npm run validate` passed: 37 skills validated and all 30 tests passed. Documentation catalog syntax and Git whitespace checks passed. Live agent-host activation was not tested.
+`npm run validate` passed: 37 skills validated and all 32 tests passed. Documentation catalog syntax and Git whitespace checks passed. Live agent-host activation was not tested.
 
 ## v0.3.3 — Strict coding-agent authorship rules
 

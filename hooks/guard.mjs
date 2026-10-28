@@ -26,7 +26,7 @@ const checks = [
   [/\bgit\s+(?:(?:-C|--git-dir|--work-tree|-c)\s+(?:"[^"]*"|'[^']*'|\S+)\s+)*(?:push)\b[^\n;&|]*(?:--force(?:-with-lease)?|-f)\b/i, "Force-push is blocked. Use a normal push or request explicit human approval."],
   [/\bgit\s+(?:(?:-C|--git-dir|--work-tree|-c)\s+(?:"[^"]*"|'[^']*'|\S+)\s+)*(?:reset\b[^\n;&|]*--hard\b|clean\s+-[^\s]*f[^\s]*|branch\s+-D(?:\s|$))/i, "Destructive Git operations are blocked. Preserve work and request explicit human approval."],
   [/(?:^|[;&|]\s*)rm\s+-(?=[a-z]*r)(?=[a-z]*f)[a-z]+\s+["']?(?:\/|~|\$HOME)(?:["']?)(?:\s|$)/i, "Recursive deletion of a broad system or home path is blocked."],
-  [/(?:^|[;&|]\s*)Remove-Item\b(?=[^\n;&|]*-Recurse)(?=[^\n;&|]*-Force)[^\n;&|]*["']?(?:\$env:USERPROFILE)(?:["']?)(?:\s|$)/i, "Recursive deletion of a broad system or home path is blocked."],
+  [/(?:^|[;&|]\s*)Remove-Item\b(?=[^\n;&|]*-Recurse\b)(?=[^\n;&|]*-Force\b)[^\n;&|]*["']?(?:\$env:USERPROFILE|\$HOME|~|\/)(?:["']?)(?:\s|$)/i, "Recursive deletion of a broad system or home path is blocked."],
   [/\b(?:cat|type|Get-Content|more|less|head|tail)\s+[^\n;&|]*(?:\.env(?:\.(?!example\b)[\w.-]+)?(?:["'\s]|$)|id_(?:rsa|ed25519)|\.pem\b|\.pfx\b|secrets\.json\b)/i, "Reading credential-bearing files through the shell is blocked."],
 ];
 
