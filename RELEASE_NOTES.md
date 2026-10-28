@@ -1,5 +1,31 @@
 # Release notes
 
+## v0.4.0 — Safer hook management and expanded .NET skills
+
+Prepared for release with [PR #15](https://github.com/dprakash2101/dotnet-production-agent-skills/pull/15); not yet published to npm.
+
+### New
+
+- Add six focused skills: `integration-testing-dotnet`, `http-client-integrations`, `observability-dotnet`, `performance-diagnostics-dotnet`, `background-services-dotnet`, and `deployment-readiness-dotnet`.
+- Expand existing skills with practical guidance for contracts, migrations, diagnostics, distributed workflows, security, validation, and repository-specific conventions.
+
+### Improved
+
+- Recognize additional destructive command variants and JSON-encoded tool arguments in the project guard. Document that its checks are best-effort and depend on the host loading the hook.
+- Preserve unrelated hook handlers and Copilot hook entries during updates. Detect modified guard scripts before replacing them, and remove only owned files during uninstall.
+- Use the same YAML-based skill validation for the CLI and standalone validator, with checks for instruction bodies, description lengths, and linked resources.
+- Make Jira naming and coverage expectations follow the repository's own policies instead of imposing fixed conventions.
+
+### Compatibility and upgrade
+
+- Existing targets, scopes, modes, and CLI options remain supported. Project hooks are a best-effort safeguard, not a sandbox; verify that your agent host loads and trusts them.
+- Older installations with a modified guard script and no ownership record require manual review. Uninstall preserves an untracked legacy script.
+- After publication, update user skills with `npx dotnet-production-agent-skills@0.4.0 update --target all`. For a project installation, add `--scope project` and review local changes before updating.
+
+### Validation
+
+`npm run validate` passed: 37 skills validated and all 30 tests passed. Documentation catalog syntax and Git whitespace checks passed. Live agent-host activation was not tested.
+
 ## v0.3.3 — Strict coding-agent authorship rules
 
 Prepared for release after PR #13 is merged; not yet published to npm.
