@@ -296,7 +296,7 @@ External consumers are never assumed absent just because no internal repository 
 | Specialized .NET knowledge | Individual `SKILL.md` files | The coding agent selects relevant skills from their descriptions and the request |
 | Command guardrails | Project hooks/guardrails | Configured for selected hosts during project-scope installation; subject to host activation and permissions |
 
-The CLI installs and manages guidance; it does not route prompts or load every skill for every task. Clear skill descriptions help the coding agent select relevant knowledge. Universal rules belong in repository instructions. Command blocking belongs in host-supported hooks. Project installs now configure native hooks for every supported coding agent using one shared, dependency-free guard script. The installer manages its own hook entries; review the proposed changes with `--dry-run`.
+The CLI installs and manages guidance; it does not route prompts or load every skill for every task. Clear skill descriptions help the coding agent select relevant knowledge. Universal rules belong in repository instructions. Command blocking belongs in host-supported hooks. Project installs now configure native hooks for every supported coding agent using a shared, dependency-free hook runtime. The installer manages its own hook entries; review the proposed changes with `--dry-run`.
 
 The guard checks common forms of force-push, destructive Git operations, broad recursive deletion, and access to some credential-bearing files. These checks are best effort: shell syntax, alternative tools, host payloads, and unsupported operations can evade them, and matching can also block a benign command. They are not a sandbox or a complete security boundary. Use host permissions, sandboxing, least-privilege access, and server-side checks for stronger enforcement. Host configuration is written to `.codex/hooks.json`, `.github/hooks/dotnet-production-agent-skills.json`, `.claude/settings.json`, `.cursor/hooks.json`, or `.agents/hooks.json` for Antigravity.
 
@@ -397,6 +397,25 @@ To remove a standalone installation, locate the active hook with `git rev-parse 
 #### Enforcement limits
 
 The hook checks co-author trailer lines in local Git commits. AI signatures, generated-by footers, and PR titles/descriptions remain covered by agent instructions. GitHub/API-created commits do not run local Git hooks. Local hooks can also be bypassed with `--no-verify` or disabled through Git configuration. For merge enforcement, add a server-side PR check and require it in branch protection. See the [Git hook documentation](https://git-scm.com/docs/githooks#_commit_msg).
+
+### Terminal diagnosis and direct process execution
+
+Project Copilot hooks classify terminal failures across tools and return the diagnosis, confidence, and next diagnostic action to the agent. Session-scoped fingerprints prevent repeating an unchanged failed command until a recognized read-only directory or executable diagnostic succeeds. Commands, output, paths, and session IDs are not written to the recovery cache; only digests, categories, counts, and timestamps are retained. Missing sessions or unavailable cache disable retry tracking rather than blocking all work.
+
+```sh
+# Register the direct stdio MCP tool once for this project.
+dotnet-production-agent-skills terminal setup --project "/path/to/project"
+# Inspect local configuration; host activation remains unknown.
+dotnet-production-agent-skills terminal capabilities --project "/path/to/project"
+# Diagnose captured evidence without executing it.
+dotnet-production-agent-skills terminal diagnose --input evidence.json
+# Explicit argv execution without an interactive shell or automatic retries.
+dotnet-production-agent-skills terminal run --project "/path/to/project" -- git status
+```
+
+The `dotnet-terminal` MCP server exposes `run_process` to Copilot. It passes structured arguments directly to the OS process API rather than typing commands into a terminal. Once observed or suspected corruption is recorded in a session, hooks direct subsequent terminal requests to that tool when the managed server configuration and entrypoint are present. Trust/activation remains the host's responsibility. Setup preserves unrelated servers and never changes auto-approval settings; use `terminal remove --project PATH` to remove only its unchanged entry. Rerun setup after an npm package-path change.
+
+The runner reports bounded output, real process exit evidence, timeout uncertainty, and diagnosis. It inherits the calling process permissions; the host must authorize its invocation. It does not intercept other commands, repair the editor terminal transport, or evaluate shell pipelines. Windows batch launchers require a verified interpreter/script invocation. See [terminal recovery architecture and limitations](docs/terminal-recovery.md).
 
 ### Terminal recovery and managed Copilot instructions
 

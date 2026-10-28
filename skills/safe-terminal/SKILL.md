@@ -53,3 +53,9 @@ Never silently substitute a different operation. Ask before a correction changes
 For destructive or hard-to-recover actions, resolve and display exact targets first, prefer a reversible operation, and obtain approval when scope is not already explicit. Never use a home directory, repository root, filesystem root, or an unvalidated variable as a recursive deletion target.
 
 For paths containing spaces, pass arguments separately where possible and verify the intended working directory before retrying. A status request or authorized action should not trigger unrelated environment changes.
+
+## Apply runtime feedback
+
+Use a hook diagnosis as evidence to investigate, not proof that every skill rule was followed. Distinguish transport corruption, wrong directory, executable resolution, shell syntax, application failure, and uncertain completion. Preserve arguments and scope. A confirmed zero exit outweighs cosmetic control markers; a successful terminal tool response alone does not prove a zero shell exit.
+
+When an unchanged retry is blocked, run a relevant read-only context diagnostic and inspect its actual output before attempting the operation again. Do not vary spelling or arguments merely to evade a retry check. If available and authorized, use `dotnet-production-agent-skills terminal capabilities --project "<project>"` to inspect local support, `terminal diagnose --input evidence.json` for captured evidence, or the explicit `terminal run --project "<project>" -- <executable> <args>` runner for simple executable invocations. The runner has no interactive shell and cannot repair editor transport or execute shell pipelines.

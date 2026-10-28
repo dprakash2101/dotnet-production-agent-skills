@@ -2,6 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { randomUUID, createHash } from 'node:crypto';
+import { mkdtemp, mkdir, copyFile, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 
 const guard = fileURLToPath(new URL('../hooks/guard.mjs', import.meta.url));
 function decide(command) {
@@ -9,7 +13,7 @@ function decide(command) {
     input: JSON.stringify({toolName: 'bash', toolArgs: {command}}), encoding: 'utf8',
   });
   assert.equal(result.status, 0, result.stderr);
-  return JSON.parse(result.stdout).permissionDecision;
+  return JSON.parse(result.stdout).permissionDecision ?? "allow";
 }
 test('guard catches common destructive command variants', () => {
   for (const command of ['git -C /repo push --force origin main', 'git reset HEAD --hard', 'rm -fr /', 'rm -rf "$HOME"', 'head .env']) {
@@ -61,7 +65,7 @@ test('guard rejects installation directories without rejecting executable paths'
     assert.equal(JSON.parse(invoke('preToolUse', { command }).stdout).permissionDecision, 'deny', command);
   }
   for (const command of ['& "C:/Program Files/dotnet/dotnet.exe" test', 'dotnet test', 'echo "C:/Program Files/Git"']) {
-    assert.equal(JSON.parse(invoke('preToolUse', { command, cwd: '/work/project' }).stdout).permissionDecision, 'allow', command);
+    assert.deepEqual(JSON.parse(invoke('preToolUse', { command, cwd: '/work/project' }).stdout), {}, command);
   }
   assert.equal(JSON.parse(invoke('preToolUse', { command: 'git status' }, { cwd: 'C:/Program Files/Git' }).stdout).permissionDecision, 'deny');
 });
@@ -77,4 +81,67 @@ test('Copilot failure hooks provide bounded recovery without copying tool output
   assert.doesNotMatch(shellFailure.stdout, /SECRET_VALUE/);
   assert.deepEqual(JSON.parse(invoke('postToolUse', { command: 'dotnet test' }, { toolResult: { textResultForLlm: 'Passed. Exit code: 0' } }).stdout), {});
   assert.deepEqual(JSON.parse(invoke('postToolUseFailure', {}, { toolName: 'view', error: 'failure' }).stdout), {});
+});
+
+
+test('Copilot session feedback blocks unchanged retries and permits verified diagnostic recovery', () => {
+  const sessionId = randomUUID();
+  const common = { sessionId, cwd: '/work/project' };
+  const command = 'npm test';
+  assert.deepEqual(JSON.parse(invoke('preToolUse', { command }, common).stdout), {});
+  const failed = invoke('postToolUseFailure', { command }, { ...common, error: 'npm ERR! test failed SECRET_VALUE' });
+  assert.equal(failed.status, 2);
+  assert.match(failed.stdout, /application-failure/);
+  const retry = JSON.parse(invoke('preToolUse', { command }, common).stdout);
+  assert.equal(retry.permissionDecision, 'deny');
+  assert.match(retry.permissionDecisionReason, /Unchanged retry/);
+  assert.doesNotMatch(retry.permissionDecisionReason, /SECRET_VALUE/);
+  assert.deepEqual(JSON.parse(invoke('preToolUse', { command: 'npm test --verbose' }, common).stdout), {});
+  assert.deepEqual(JSON.parse(invoke('preToolUse', { command }, { ...common, sessionId: randomUUID() }).stdout), {});
+  invoke('postToolUse', { command: 'Get-Location' }, { ...common, toolResult: { resultType: 'success', textResultForLlm: '/work/project' } });
+  assert.deepEqual(JSON.parse(invoke('preToolUse', { command }, common).stdout), {});
+});
+
+test('Copilot distinguishes transport evidence, actual application failures, and cosmetic markers', () => {
+  const transport = invoke('postToolUseFailure', { command: 'git status' }, { error: '^Ugit: command not found', toolResult: { executedCommand: '^Ugit status' } });
+  assert.match(transport.stdout, /transport-corruption/);
+  const application = invoke('postToolUseFailure', { command: 'python test.py' }, { error: 'Traceback (most recent call last): SECRET_VALUE', toolResult: { executedCommand: '^Upython test.py' } });
+  assert.match(application.stdout, /application-failure/);
+  const success = invoke('postToolUse', { command: 'docker version' }, { toolResult: { exitCode: 0, textResultForLlm: '^C' } });
+  assert.deepEqual(JSON.parse(success.stdout), {});
+  const uncertain = invoke('postToolUseFailure', { command: 'npm publish' }, { error: 'execution timed out' });
+  assert.match(uncertain.stdout, /uncertain-completion/);
+  assert.match(uncertain.stdout, /before repeating/);
+});
+
+
+test('corrupted terminal sessions route subsequent commands to direct MCP execution', async t => {
+  const project = await mkdtemp(path.join(tmpdir(), 'transport-route-'));
+  t.after(() => rm(project, { recursive: true, force: true }));
+  const directory = path.join(project, '.agent-guardrails');
+  await mkdir(directory);
+  for (const name of ['guard.mjs', 'diagnosis.mjs', 'session-state.mjs', 'command-policy.mjs']) {
+    await copyFile(fileURLToPath(new URL(`../hooks/${name}`, import.meta.url)), path.join(directory, name));
+  }
+  const entry = { type: 'stdio', command: process.execPath, args: [fileURLToPath(new URL('../dist/src/cli.js', import.meta.url)), 'terminal', 'serve', '--project', project], tools: ['run_process'] };
+  const stable = value => Array.isArray(value) ? `[${value.map(stable).join(',')}]` : value && typeof value === 'object' ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stable(value[key])}`).join(',')}}` : JSON.stringify(value);
+  await writeFile(path.join(project, '.mcp.json'), JSON.stringify({ mcpServers: { 'dotnet-terminal': entry } }));
+  await writeFile(path.join(project, '.dotnet-terminal-server.json'), JSON.stringify({ schemaVersion: 1, digest: createHash('sha256').update(stable(entry)).digest('hex') }));
+  const sessionId = randomUUID();
+  function call(event, command, extra = {}) {
+    return spawnSync(process.execPath, [path.join(directory, 'guard.mjs'), 'copilot', event], {
+      encoding: 'utf8', input: JSON.stringify({ sessionId, cwd: project, toolName: 'bash', toolArgs: { command }, ...extra }),
+    });
+  }
+  const failure = call('postToolUseFailure', 'git status', { error: '^Ugit: command not found' });
+  assert.match(failure.stdout, /suspected-transport-corruption/);
+  assert.match(failure.stdout, /run_process/);
+  const next = JSON.parse(call('preToolUse', 'python --version').stdout);
+  assert.equal(next.permissionDecision, 'deny');
+  assert.match(next.permissionDecisionReason, /run_process MCP/);
+  assert.match(next.permissionDecisionReason, /without typing/);
+  const other = JSON.parse(call('preToolUse', 'python --version', { sessionId: randomUUID() }).stdout);
+  assert.deepEqual(other, {});
+  await rm(path.join(project, '.dotnet-terminal-server.json'));
+  assert.deepEqual(JSON.parse(call('preToolUse', 'python --version').stdout), {});
 });

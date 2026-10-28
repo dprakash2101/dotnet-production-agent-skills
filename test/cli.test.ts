@@ -481,7 +481,7 @@ test("Copilot installs executable corrective feedback hooks and migrates old con
     assert.equal(data.hooks[event].length, 1);
     const handler = data.hooks[event][0];
     assert.equal(handler.cwd, ".");
-    const result = spawnSync(handler.command, { shell: true, cwd: path.resolve(project, handler.cwd), encoding: "utf8", input: JSON.stringify({ toolName: "bash", toolArgs: JSON.stringify({ command: "^Udotnet test" }), error: "command not found" }) });
+    const result = spawnSync(handler.command, { shell: true, cwd: path.resolve(project, handler.cwd), encoding: "utf8", input: JSON.stringify({ toolName: "bash", toolArgs: JSON.stringify({ command: "^Udotnet test" }), error: "command not found", toolResult: event === "postToolUse" ? { exitCode: 0 } : {} }) });
     if (event === "preToolUse") {
       assert.equal(result.status, 0, result.stderr);
       assert.equal(JSON.parse(result.stdout).permissionDecision, "deny");
@@ -513,4 +513,66 @@ test("Copilot preserves customized managed feedback handlers on update and unins
     assert.deepEqual(JSON.parse(await readFile(config, "utf8")).hooks.preToolUse, [custom]);
   }
   assert.ok(await readFile(path.join(project, ".agent-guardrails", "guard.mjs"), "utf8"));
+});
+
+
+test("hook dependencies install, report drift, and preserve edits before multi-target updates", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "recovery-deps-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "recovery-deps-project-"));
+  const args = ["--target", "all", "--project", project];
+  assert.equal(runAt(home, project, "install", ...args).status, 0);
+  const dependency = path.join(project, ".agent-guardrails", "diagnosis.mjs");
+  const canonical = await readFile(dependency, "utf8");
+  await writeFile(dependency, `${canonical}\n// local change\n`);
+  const result = runAt(home, project, "update", ...args);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Modified or unmanaged guard script preserved/);
+  assert.notEqual(runAt(home, project, "doctor", ...args, "--json").status, 0);
+  assert.equal(runAt(home, project, "uninstall", ...args).status, 0);
+  assert.match(await readFile(dependency, "utf8"), /local change/);
+  assert.ok(await readFile(path.join(project, ".agent-guardrails", "guard.mjs"), "utf8"));
+});
+
+test("terminal commands are reachable through the published CLI dispatch", () => {
+  const help = runAt(process.env.HOME ?? repository, repository, "terminal", "--help");
+  assert.equal(help.status, 0, help.stderr);
+  assert.match(help.stdout, /terminal capabilities/);
+  const result = runAt(process.env.HOME ?? repository, repository, "terminal", "run", "--project", repository, "--", process.execPath, "-e", "process.exit(3)");
+  assert.equal(result.status, 3, result.stderr);
+  assert.equal(JSON.parse(result.stdout).diagnosis.category, "application-failure");
+});
+
+
+test("terminal setup registers a launchable MCP server and removes only its entry", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "terminal-setup-cli-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "terminal-setup-cli-project-"));
+  const dryRun = runAt(home, project, "terminal", "setup", "--project", project, "--dry-run");
+  assert.equal(dryRun.status, 0, dryRun.stderr);
+  await assert.rejects(readFile(path.join(project, ".mcp.json")), { code: "ENOENT" });
+  const setup = runAt(home, project, "terminal", "setup", "--project", project);
+  assert.equal(setup.status, 0, setup.stderr);
+  const config = JSON.parse(await readFile(path.join(project, ".mcp.json"), "utf8"));
+  const entry = config.mcpServers["dotnet-terminal"];
+  const server = spawnSync(entry.command, entry.args, { encoding: "utf8", timeout: 10000, input: [
+    { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "setup-test", version: "1" } } },
+    { jsonrpc: "2.0", method: "notifications/initialized" },
+    { jsonrpc: "2.0", id: 2, method: "tools/list" },
+  ].map(value => JSON.stringify(value)).join("\n") + "\n" });
+  assert.equal(server.status, 0, server.stderr);
+  const replies = server.stdout.trim().split("\n").map(line => JSON.parse(line));
+  assert.equal(replies[1].result.tools[0].name, "run_process");
+  assert.equal(runAt(home, project, "terminal", "remove", "--project", project).status, 0);
+  await assert.rejects(readFile(path.join(project, ".mcp.json")), { code: "ENOENT" });
+});
+
+test("untracked guard keeps owned runtime dependencies during uninstall", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "untracked-runtime-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "untracked-runtime-project-"));
+  const args = ["--target", "all", "--project", project];
+  assert.equal(runAt(home, project, "install", ...args).status, 0);
+  await rm(path.join(project, ".agent-guardrails", "guard.mjs.sha256"));
+  assert.equal(runAt(home, project, "uninstall", ...args).status, 0);
+  for (const name of ["guard.mjs", "diagnosis.mjs", "session-state.mjs", "command-policy.mjs"]) {
+    assert.ok(await readFile(path.join(project, ".agent-guardrails", name), "utf8"));
+  }
 });

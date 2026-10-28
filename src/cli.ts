@@ -23,6 +23,8 @@ import { changeInstructions, inspectInstructions } from "./copilot/instructions.
 import { changeHooks, hookTargets, inspectHooks, removeSharedHookScript, type HookState } from "./hooks.js";
 import { validateSkills } from "./skills/validation.js";
 import { installGitHook } from "./git-hook.js";
+import { terminalMain } from "./terminal.js";
+import { changeTerminalServer } from "./terminal-setup.js";
 
 type Command = "install" | "update" | "list" | "doctor" | "uninstall" | "git-hook";
 type Target = "all" | "shared" | "codex" | "copilot" | "claude" | "cursor" | "antigravity";
@@ -82,6 +84,7 @@ Commands:
   doctor       Validate packaged skills and inspect installation health
   uninstall    Remove only skills tracked by this package
   git-hook     Opt in to a Git commit-msg hook in the current/--project repository
+  terminal     Diagnose failures, inspect capabilities, or run explicit argv commands
 
 Options:
   --target <all|shared|codex|copilot|claude|cursor|antigravity>
@@ -386,7 +389,10 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
   if ((options.target === "copilot" || options.target === "all") && options.scope === "project") {
     const action = await changeInstructions(options.project, "install", options.dryRun);
     console.log(`${action === "skip" ? "skip" : options.dryRun ? `would ${action}` : action} Copilot production instructions`);
-    if (!options.dryRun) console.log("Copilot CLI: /skills list | /skills reload | /skills info <skill-name>");
+    if (!options.dryRun) {
+      console.log("Copilot CLI: /skills list | /skills reload | /skills info <skill-name>");
+      console.log("Direct process tool: terminal setup --project <project-path>; confirm MCP trust and run_process availability in Copilot.");
+    }
   }
   if (options.scope === "project") {
     for (const target of hookTargets(options.target)) {
@@ -513,6 +519,22 @@ async function main(): Promise<void> {
     const argv = process.argv.slice(2);
     if (argv.length === 1 && (argv[0] === "-h" || argv[0] === "--help")) {
       console.log(usage());
+      return;
+    }
+    if (argv[0] === "terminal") {
+      if (argv[1] === "setup" || argv[1] === "remove") {
+        const setupArgs = argv.slice(2);
+        for (let index = 0; index < setupArgs.length; index++) {
+          if (setupArgs[index] === "--project") { requireValue(setupArgs, index, "--project"); index++; }
+          else if (setupArgs[index] !== "--dry-run") throw new Error(`unknown terminal setup option: ${setupArgs[index]}`);
+        }
+        const setup = parseArgs(["setup", ...setupArgs]).options;
+        const result = await changeTerminalServer(setup.project, PACKAGE_ROOT, argv[1] === "setup" ? "install" : "uninstall", setup.dryRun);
+        console.log(`${setup.dryRun ? "would " : ""}${result.action} structured terminal MCP configuration: ${result.path}`);
+        console.log("Confirm server trust and tool availability in Copilot. No auto-approval or host permission settings were changed.");
+        return;
+      }
+      await terminalMain(argv.slice(1));
       return;
     }
     const parsed = parseArgs(argv);
