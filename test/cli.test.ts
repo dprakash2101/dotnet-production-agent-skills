@@ -467,3 +467,50 @@ test("copilot hook installation retains existing custom entries", async () => {
   assert.equal(runAt(home, project, "uninstall", "--target", "copilot", "--project", project).status, 0);
   assert.match(await readFile(config, "utf8"), /team-check/);
 });
+
+test("Copilot installs executable corrective feedback hooks and migrates old configuration", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "feedback-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "feedback-project-"));
+  const config = path.join(project, ".github", "hooks", "dotnet-production-agent-skills.json");
+  await mkdir(path.dirname(config), { recursive: true });
+  await writeFile(config, JSON.stringify({ version: 1, hooks: { preToolUse: [{ type: "command", command: "node .agent-guardrails/guard.mjs copilot", timeoutSec: 10 }] } }));
+  const install = runAt(home, project, "install", "--target", "copilot", "--project", project);
+  assert.equal(install.status, 0, install.stderr);
+  const data = JSON.parse(await readFile(config, "utf8"));
+  for (const event of ["preToolUse", "postToolUse", "postToolUseFailure"]) {
+    assert.equal(data.hooks[event].length, 1);
+    const handler = data.hooks[event][0];
+    assert.equal(handler.cwd, ".");
+    const result = spawnSync(handler.command, { shell: true, cwd: path.resolve(project, handler.cwd), encoding: "utf8", input: JSON.stringify({ toolName: "bash", toolArgs: JSON.stringify({ command: "^Udotnet test" }), error: "command not found" }) });
+    if (event === "preToolUse") {
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(JSON.parse(result.stdout).permissionDecision, "deny");
+      assert.match(JSON.parse(result.stdout).permissionDecisionReason, /safe-terminal/);
+    } else if (event === "postToolUseFailure") {
+      assert.equal(result.status, 2);
+      assert.match(result.stdout, /do not repeat it unchanged/);
+    } else assert.deepEqual(JSON.parse(result.stdout), {});
+  }
+  assert.equal(runAt(home, project, "update", "--target", "copilot", "--project", project).status, 0);
+  assert.deepEqual(JSON.parse(await readFile(config, "utf8")), data);
+  data.hooks.postToolUse.push({ type: "command", command: "team-feedback" });
+  await writeFile(config, JSON.stringify(data));
+  assert.equal(runAt(home, project, "uninstall", "--target", "copilot", "--project", project).status, 0);
+  assert.deepEqual(JSON.parse(await readFile(config, "utf8")).hooks, { postToolUse: [{ type: "command", command: "team-feedback" }] });
+});
+
+
+test("Copilot preserves customized managed feedback handlers on update and uninstall", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "feedback-custom-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "feedback-custom-project-"));
+  const config = path.join(project, ".github", "hooks", "dotnet-production-agent-skills.json");
+  await mkdir(path.dirname(config), { recursive: true });
+  const custom = { type: "command", command: "node .agent-guardrails/guard.mjs copilot", cwd: "team-directory", timeoutSec: 7 };
+  await writeFile(config, JSON.stringify({ version: 1, hooks: { preToolUse: [custom] } }));
+  for (const action of ["install", "update", "uninstall"]) {
+    const result = runAt(home, project, action, "--target", "copilot", "--project", project);
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(JSON.parse(await readFile(config, "utf8")).hooks.preToolUse, [custom]);
+  }
+  assert.ok(await readFile(path.join(project, ".agent-guardrails", "guard.mjs"), "utf8"));
+});

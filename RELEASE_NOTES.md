@@ -1,5 +1,13 @@
 # Release notes
 
+## Unreleased — Automatic Copilot command feedback
+
+- Reject literal `^U`/Ctrl+U command prefixes with a `safe-terminal` correction message.
+- Detect common explicit tool-installation directory selections in terminal arguments, navigation, and Git directory options; allow fully qualified executable invocation from the project.
+- Install Copilot post-tool feedback for failed commands without copying raw output or executing replacement commands.
+- Anchor Copilot hook execution to the repository root; migrate the exact previous generated handler while preserving customized handlers and unrelated hooks.
+- Validation: `npm run validate` passed with 37 skills and all 37 tests. Coverage includes installed hook execution, migration, idempotency, uninstall, corrective messages, and allowed commands. Live Copilot activation remains untested.
+
 ## v0.4.0 — Safer hook management and expanded .NET skills
 
 Prepared for release with [PR #15](https://github.com/dprakash2101/dotnet-production-agent-skills/pull/15); not yet published to npm.

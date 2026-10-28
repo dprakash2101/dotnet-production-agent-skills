@@ -29,6 +29,8 @@ Check typos, flags, quoting, shell-specific syntax, working directory, paths, an
 
 Submit plain command text. Do not prepend terminal keyboard shortcuts, control bytes, escape sequences, or copied prompt text to clear or repair a command line. If submitted and executed text differ repeatedly, inspect the terminal/tool transport or report that blocker; do not keep adding control sequences.
 
+In particular, never prepend `^U` or the Ctrl+U byte to a command: submit `dotnet test`, not `^Udotnet test`. If a displayed command has this prefix, check the actual executable and error first; remove the prefix and retry once only when it survived into the executed command. If `dotnet` executed, investigate its actual error instead.
+
 ## Diagnose an unavailable executable
 
 For a command-not-found error, use read-only checks in the **same shell/session** that failed. In PowerShell, use `Get-Command <name> -All` and, where useful, `where.exe <name>`; in cmd use `where <name>`; in POSIX shells use `command -v <name>`. Check the current `PATH` without printing credentials or unrelated environment values. If the tool is found, distinguish a typo or wrong shell from an executable that is present but absent from that process's `PATH`. If it is not found, report that the tool is unavailable in this environment; do not guess its installation path or repeatedly run the same command.
