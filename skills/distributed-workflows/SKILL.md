@@ -15,3 +15,5 @@ Assume timeouts, partial failure, duplicate delivery, reordering, and ambiguous 
 - Attach correlation/trace identifiers and structured outcome metrics without sensitive payloads.
 
 Test duplicate execution, retry exhaustion, cancellation/shutdown, partial failure, and recovery—not just the happy path.
+
+For an outbox or inbox, identify which records and business changes share a database transaction. Walk through crashes before commit, after commit, after publication and before acknowledgment. Set deduplication retention to cover the expected replay window.

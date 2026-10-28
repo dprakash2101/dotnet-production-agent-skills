@@ -16,3 +16,5 @@ Prefer clear names, focused methods, guard clauses, accurate null handling, stru
 Avoid deep nesting, giant methods, unexplained magic values, unnecessary static state, swallowed or over-broad exceptions, dead/commented code, complex LINQ that obscures intent, sync-over-async, secret logging, hardcoded credentials, unjustified allocations on hot paths, and analyzer suppression as a substitute for a fix.
 
 Apply Clean-as-You-Code: introduce no new issues, vulnerabilities, security hotspots, or avoidable duplication in changed code. Improve a pre-existing issue only when the requested change materially touches it or it blocks safe implementation. Do not turn feature work into a historical Sonar cleanup. Run the repository's configured analyzer/Sonar-equivalent check when available and proportionate; do not invent a generic rule set when the repository defines one.
+
+Use the repository analyzer configuration and the specific actionable diagnostic rather than inventing rules. Validate any fix with the narrow affected build or configured analyzer check.

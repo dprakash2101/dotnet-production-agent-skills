@@ -40,7 +40,25 @@
 
       <div class="release-list-heading"><span>Recent updates</span><span>Newest first</span></div>
 
-      <article class="release-entry release-entry-featured" aria-labelledby="v033-title">
+      <article class="release-entry release-entry-featured" aria-labelledby="v040-title">
+        <div class="release-entry-topline"><p class="release-status status-prepared">v0.4.0 · Prepared for release</p><span class="release-type">Skills &amp; hooks</span></div>
+        <h2 id="v040-title">Safer hook management and expanded .NET skills</h2>
+        <p class="release-summary">Prepared with <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/15">PR #15</a>; not yet published to npm.</p>
+        <h3>New and improved</h3>
+        <ul>
+          <li>Six new skills cover integration testing, HTTP clients, observability, performance diagnostics, background services, and deployment readiness. Existing skill guidance is expanded.</li>
+          <li>Hook updates preserve unrelated handlers and detect customized guard scripts; uninstall removes only owned files. The command guard recognizes additional destructive variants.</li>
+          <li>CLI and standalone skill validation share YAML-based checks. Jira naming and coverage expectations follow repository policies.</li>
+        </ul>
+        <h3>Compatibility and upgrade</h3>
+        <ul>
+          <li>After publication, run <code>npx dotnet-production-agent-skills@0.4.0 update --target all</code>; add <code>--scope project</code> for a project installation. Review local changes first.</li>
+          <li>Unmodified previous-release guards migrate automatically. Customized or unrecognized guards without ownership metadata require manual review. Hooks are best-effort and depend on host activation; they are not a sandbox.</li>
+        </ul>
+        <p class="release-verification">Validation: 37 skills and 32 tests passed. Live agent-host activation was not tested.</p>
+      </article>
+
+      <article class="release-entry" aria-labelledby="v033-title">
         <div class="release-entry-topline"><p class="release-status status-prepared">v0.3.3 · Prepared for release</p><span class="release-type">Agent guidance</span></div>
         <h2 id="v033-title">Strict coding-agent authorship rules</h2>
         <p class="release-summary">Prohibits co-author trailers and AI attribution in commits and pull requests. Prepared for release after <a href="https://github.com/dprakash2101/dotnet-production-agent-skills/pull/13">PR #13</a> is merged; not yet published to npm.</p>

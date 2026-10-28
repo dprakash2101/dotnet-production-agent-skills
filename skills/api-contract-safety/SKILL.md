@@ -12,3 +12,5 @@ Before editing, locate controller/endpoint definitions, DTOs, serializers/conver
 Prefer additive, backward-compatible changes. Do not rename/remove fields, change type or meaning, make optional input required, alter enum wire values, change status/error behavior, or tighten auth unless required. Distinguish missing, null, empty, and default values when clients can observe the difference.
 
 When a breaking change is unavoidable, identify affected consumers and use the repository's versioning/migration/deprecation approach. Test serialized wire behavior and representative failures, not only C# object equality. Update API documentation/generated clients only when part of the repository's established workflow.
+
+When available, compare generated OpenAPI or serialized representative responses before and after the change. Include missing versus null fields, enum wire values, error payloads and a representative existing consumer in compatibility tests.

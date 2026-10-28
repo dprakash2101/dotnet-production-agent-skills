@@ -171,8 +171,8 @@ The catalog is grouped by task so agents can load only the guidance relevant to 
 
 | Skill | Focus & Trigger | Progressive References |
 | :--- | :--- | :--- |
-| [`dotnet-architecture`](skills/dotnet-architecture/SKILL.md) | Design and preserve clean boundaries, layering, and DI registrations for substantial changes. | [architecture-patterns](skills/dotnet-architecture/references/architecture-patterns.md) |
-| [`dotnet-implementation`](skills/dotnet-implementation/SKILL.md) | Implement robust production .NET & ASP.NET Core behavior adhering to established repository conventions. | [idiomatic-csharp](skills/dotnet-implementation/references/idiomatic-csharp.md) |
+| [`dotnet-architecture`](skills/dotnet-architecture/SKILL.md) | Design and preserve clean boundaries, layering, and DI registrations for substantial changes. | [design-checks](skills/dotnet-architecture/references/design-checks.md) |
+| [`dotnet-implementation`](skills/dotnet-implementation/SKILL.md) | Implement robust production .NET & ASP.NET Core behavior adhering to established repository conventions. | [runtime-safety](skills/dotnet-implementation/references/runtime-safety.md) |
 | [`shared-code-impact`](skills/shared-code-impact/SKILL.md) | Identify all consumers, analyze ripple effects, and strictly constrain changes to shared libraries/helpers. | — |
 | [`dependency-management`](skills/dependency-management/SKILL.md) | Assess, add, prune, or upgrade NuGet dependencies conservatively without breaking transitive graphs. | — |
 
@@ -183,14 +183,15 @@ The catalog is grouped by task so agents can load only the guidance relevant to 
 | [`aspnet-core-api-development`](skills/aspnet-core-api-development/SKILL.md) | Build thin controllers/minimal APIs with validation, structured responses, and complete OpenAPI specs. | — |
 | [`api-contract-safety`](skills/api-contract-safety/SKILL.md) | Guard HTTP contracts against unintended breaking changes across routes, payloads, error formats, and headers. | — |
 | [`api-endpoint-deprecation`](skills/api-endpoint-deprecation/SKILL.md) | Execute formal multi-stage API deprecation, migration windows, consumer verification, and safe retirement. | — |
-| [`exception-handling`](skills/exception-handling/SKILL.md) | Establish clear recovery, translation, cancellation, and logging boundaries across .NET application tiers. | [api-boundaries](skills/exception-handling/references/api-boundaries.md) |
+| [`exception-handling`](skills/exception-handling/SKILL.md) | Establish clear recovery, translation, cancellation, and logging boundaries across .NET application tiers. | [customer-facing-api](skills/exception-handling/references/customer-facing-api.md) |
 
 ### 4. 🧪 Quality, Testing & Review
 
 | Skill | Focus & Trigger | Progressive References |
 | :--- | :--- | :--- |
 | [`code-quality`](skills/code-quality/SKILL.md) | Apply Clean-as-You-Code principles, Roslyn analyzers, and Sonar expectations to new/modified code. | — |
-| [`unit-testing`](skills/unit-testing/SKILL.md) | Target 90–100% meaningful coverage of new business logic using parameterized tests without test bloat. | — |
+| [`unit-testing`](skills/unit-testing/SKILL.md) | Cover changed business behavior with meaningful tests and follow repository coverage policy. | — |
+| [`integration-testing-dotnet`](skills/integration-testing-dotnet/SKILL.md) | Test HTTP boundaries and persistence integrations with isolated dependencies and realistic provider behavior. | — |
 | [`code-review`](skills/code-review/SKILL.md) | Review diffs rigorously for correctness, security, concurrency, performance, and regression risks. | — |
 | [`targeted-validation`](skills/targeted-validation/SKILL.md) | Run proportionate verification (from single-test execution to full suite runs) aligned with change risk. | — |
 | [`diff-review`](skills/diff-review/SKILL.md) | Perform a final pre-commit audit of working tree diffs for accidental mutations, formatting drift, and secrets. | — |
@@ -212,6 +213,8 @@ The catalog is grouped by task so agents can load only the guidance relevant to 
 | :--- | :--- | :--- |
 | [`distributed-workflows`](skills/distributed-workflows/SKILL.md) | Build idempotent consumers, handle partial failures, manage distributed retries, and design background workers. | — |
 | [`retry-resilience`](skills/retry-resilience/SKILL.md) | Add explicitly requested retries or review existing transient failure policies; avoid automatic retries. | — |
+| [`http-client-integrations`](skills/http-client-integrations/SKILL.md) | Build and review outbound HTTP clients with safe lifetimes, timeouts, and resource handling. | — |
+| [`background-services-dotnet`](skills/background-services-dotnet/SKILL.md) | Build bounded hosted workers with scoped dependencies and graceful shutdown. | — |
 | [`dotnet-security`](skills/dotnet-security/SKILL.md) | Threat-model .NET boundaries, protect against SSRF/XSS/SQLi, enforce authorization, and handle secrets safely. | — |
 | [`production-logging`](skills/production-logging/SKILL.md) | Produce structured, high-signal, sensitive-data-masked, and cost-efficient Serilog/ILogger production logs. | — |
 
@@ -221,6 +224,9 @@ The catalog is grouped by task so agents can load only the guidance relevant to 
 | :--- | :--- | :--- |
 | [`bug-investigation`](skills/bug-investigation/SKILL.md) | Isolate symptoms to an empirical root cause before proposing or writing code modifications. | — |
 | [`production-debugging`](skills/production-debugging/SKILL.md) | Diagnose production failures from telemetry, dumps, traces, and metrics without mutating live state. | — |
+| [`observability-dotnet`](skills/observability-dotnet/SKILL.md) | Design traces, metrics, propagation, sampling, and useful operational signals. | — |
+| [`performance-diagnostics-dotnet`](skills/performance-diagnostics-dotnet/SKILL.md) | Measure and diagnose .NET performance using bounded evidence collection. | — |
+| [`deployment-readiness-dotnet`](skills/deployment-readiness-dotnet/SKILL.md) | Assess deployment compatibility, health, rollout, and rollback readiness. | — |
 | [`production-hotfix`](skills/production-hotfix/SKILL.md) | Formulate and validate emergency incident hotfixes with minimal blast radius and rapid evidence-based testing. | — |
 | [`git-workflow`](skills/git-workflow/SKILL.md) | Carry out requested branch, commit, and push operations using efficient batch commands and clean Git hygiene. | — |
 
@@ -267,8 +273,8 @@ flowchart LR
 - Automatically inspects `.editorconfig`, repository analyzers, Roslyn rules, and SonarCloud settings before writing C#.
 - Adheres to [Clean as You Code](https://docs.sonarsource.com/sonarqube-cloud/standards/about-new-code/): fixes new defects and complexity in modified code without derailing tasks into massive legacy cleanups.
 
-### Targeted Unit-Test Coverage (90–100%)
-- Focuses on 90–100% meaningful coverage of new or modified business logic.
+### Targeted Unit-Test Coverage
+- Follows the repository coverage policy and focuses on meaningful tests for new or modified business logic.
 - Avoids redundant test counts and brittle implementation testing; prioritizes framework-native parameterized tests (`[Theory]`, `[TestCase]`) and real observable outcomes.
 
 ### Formal API Deprecation Lifecycle
@@ -288,11 +294,15 @@ External consumers are never assumed absent just because no internal repository 
 | :--- | :--- | :--- |
 | Universal engineering rules | Managed section in project `.github/copilot-instructions.md` | Every Copilot coding task in that project |
 | Specialized .NET knowledge | Individual `SKILL.md` files | The coding agent selects relevant skills from their descriptions and the request |
-| Deterministic command enforcement | Project hooks/guardrails | Installed for Codex, Copilot, Claude Code, Cursor, and Antigravity in project scope |
+| Command guardrails | Project hooks/guardrails | Configured for selected hosts during project-scope installation; subject to host activation and permissions |
 
-The CLI installs and manages guidance; it does not route prompts or load every skill for every task. Clear skill descriptions help the coding agent select relevant knowledge. Universal rules belong in repository instructions. Command blocking belongs in host-supported hooks. Project installs now configure native hooks for every supported coding agent using one shared, dependency-free guard script. Existing unrelated hook entries are preserved.
+The CLI installs and manages guidance; it does not route prompts or load every skill for every task. Clear skill descriptions help the coding agent select relevant knowledge. Universal rules belong in repository instructions. Command blocking belongs in host-supported hooks. Project installs now configure native hooks for every supported coding agent using one shared, dependency-free guard script. The installer manages its own hook entries; review the proposed changes with `--dry-run`.
 
-The initial policy blocks force-push, destructive Git reset/clean/branch deletion, broad recursive deletion, and direct access to common credential-bearing files. Safe commands continue normally. Host configuration is written to `.codex/hooks.json`, `.github/hooks/dotnet-production-agent-skills.json`, `.claude/settings.json`, `.cursor/hooks.json`, or `.agents/hooks.json` for Antigravity.
+The guard checks common forms of force-push, destructive Git operations, broad recursive deletion, and access to some credential-bearing files. These checks are best effort: shell syntax, alternative tools, host payloads, and unsupported operations can evade them, and matching can also block a benign command. They are not a sandbox or a complete security boundary. Use host permissions, sandboxing, least-privilege access, and server-side checks for stronger enforcement. Host configuration is written to `.codex/hooks.json`, `.github/hooks/dotnet-production-agent-skills.json`, `.claude/settings.json`, `.cursor/hooks.json`, or `.agents/hooks.json` for Antigravity.
+
+Project hooks are configured on project-scope installation; user-scope skill installs do not add them. Hosts may require trust, enablement, a supported version, and a working Node.js executable. Confirm activation using the host's hook diagnostics. `doctor` inspects installed configuration and script contents; it does not prove that a host executed the hook. Host timeout and error behavior differ. Avoid logging hook inputs because they may contain secrets.
+
+The separate Git `commit-msg` hook is opt-in. Local Git hooks can be bypassed and do not cover commits created through an API; add a required server-side check if enforcement is needed across all paths.
 
 ### Reject co-author trailers with Git
 

@@ -31,3 +31,5 @@ Assume messages can be delivered more than once. Make handlers idempotent where 
 Test publish completion/failure, bounded producer flow, shutdown flushing, successful ack, retryable nack/redelivery, duplicate delivery, idempotency, cancellation, subscriber flow-control limits, and dead-letter/poison behavior as applicable.
 
 Read [references/client-patterns.md](references/client-patterns.md) when choosing client type, configuring a hosted subscriber, or tuning publisher/subscriber flow control and shutdown.
+
+Exercise crash boundaries around durable work and acknowledgment, and verify graceful shutdown with outstanding messages. Use an emulator or isolated test environment where appropriate.

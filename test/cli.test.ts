@@ -409,3 +409,61 @@ test("doctor accepts multiline YAML frontmatter and rejects invalid metadata", a
   assert.deepEqual(await validateSkills(root, ["good-skill"]), []);
   assert.match((await validateSkills(root, ["bad-skill"])).join(" "), /invalid YAML/);
 });
+
+test("hook updates preserve sibling handlers and reject modified scripts before installation", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "hook-preserve-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "hook-preserve-project-"));
+  assert.equal(runAt(home, project, "install", "--target", "claude", "--project", project).status, 0);
+  const config = path.join(project, ".claude", "settings.json");
+  const data = JSON.parse(await readFile(config, "utf8"));
+  data.hooks.PreToolUse[0].hooks.push({ type: "command", command: "team-check" });
+  await writeFile(config, JSON.stringify(data));
+  assert.equal(runAt(home, project, "update", "--target", "claude", "--project", project).status, 0);
+  assert.match(await readFile(config, "utf8"), /team-check/);
+  const guard = path.join(project, ".agent-guardrails", "guard.mjs");
+  await writeFile(guard, `${await readFile(guard, "utf8")}\n// custom\n`);
+  const result = runAt(home, project, "update", "--target", "claude", "--project", project);
+  assert.notEqual(result.status, 0);
+  assert.match(await readFile(guard, "utf8"), /custom/);
+});
+
+test("unmodified legacy guard migrates while customized legacy guard is preserved", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "hook-legacy-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "hook-legacy-project-"));
+  assert.equal(runAt(home, project, "install", "--target", "claude", "--project", project).status, 0);
+  const guard = path.join(project, ".agent-guardrails", "guard.mjs");
+  const legacy = await readFile(path.join(repository, "test", "fixtures", "legacy-guard.mjs"), "utf8");
+  await writeFile(guard, legacy);
+  await rm(`${guard}.sha256`);
+  const result = runAt(home, project, "update", "--target", "claude", "--project", project);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(await readFile(guard, "utf8"), await readFile(path.join(repository, "hooks", "guard.mjs"), "utf8"));
+  assert.match(await readFile(`${guard}.sha256`, "utf8"), /^[a-f0-9]{64}\n$/);
+  await writeFile(guard, `${legacy}\n// custom\n`);
+  await rm(`${guard}.sha256`);
+  const rejected = runAt(home, project, "update", "--target", "claude", "--project", project, "--force", "--yes");
+  assert.notEqual(rejected.status, 0);
+  assert.equal(await readFile(guard, "utf8"), `${legacy}\n// custom\n`);
+});
+
+test("all-target uninstall preserves unrelated files in guard directory", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "hook-extra-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "hook-extra-project-"));
+  assert.equal(runAt(home, project, "install", "--target", "all", "--project", project).status, 0);
+  const extra = path.join(project, ".agent-guardrails", "team-notes.txt");
+  await writeFile(extra, "keep");
+  assert.equal(runAt(home, project, "uninstall", "--target", "all", "--project", project).status, 0);
+  assert.equal(await readFile(extra, "utf8"), "keep");
+});
+
+test("copilot hook installation retains existing custom entries", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "hook-copilot-home-"));
+  const project = await mkdtemp(path.join(tmpdir(), "hook-copilot-project-"));
+  const config = path.join(project, ".github", "hooks", "dotnet-production-agent-skills.json");
+  await mkdir(path.dirname(config), { recursive: true });
+  await writeFile(config, JSON.stringify({ version: 1, hooks: { sessionStart: [{ type: "command", command: "team-check" }] } }));
+  assert.equal(runAt(home, project, "install", "--target", "copilot", "--project", project).status, 0);
+  assert.match(await readFile(config, "utf8"), /team-check/);
+  assert.equal(runAt(home, project, "uninstall", "--target", "copilot", "--project", project).status, 0);
+  assert.match(await readFile(config, "utf8"), /team-check/);
+});

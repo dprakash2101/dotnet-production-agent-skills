@@ -12,3 +12,5 @@ Form falsifiable hypotheses and request the smallest evidence needed: structured
 For high CPU, memory, thread-pool starvation, deadlock, or crash analysis, capture diagnostics with production-safe tooling and bounded duration/size. Account for collection overhead and retention/security rules. Never attach a debugger, restart, scale, change flags, clear queues/caches, or capture sensitive dumps without explicit authorization.
 
 Conclude with verified facts, root cause or ranked hypotheses, evidence gaps, safe mitigation/fix options, and a validation/monitoring plan. Keep production diagnosis separate from authorization to change production.
+
+For performance incidents, first identify whether CPU, allocation/GC, thread-pool pressure, contention or downstream latency is dominant. Choose bounded counters, traces or dumps appropriate to the evidence and assess capture overhead and sensitive-data retention.

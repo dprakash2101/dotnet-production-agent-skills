@@ -1,4 +1,4 @@
-import { readFile, stat } from "node:fs/promises";
+import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import YAML from "yaml";
 
@@ -30,17 +30,24 @@ export async function validateSkills(root: string, names: string[]): Promise<str
     }
     const fields = metadata as Record<string, unknown>;
     if (typeof fields.name !== "string" || fields.name !== name) errors.push(`${name}: frontmatter name does not match directory`);
-    if (typeof fields.description !== "string" || !fields.description.trim()) errors.push(`${name}: missing description`);
+    if (typeof fields.description !== "string" || !fields.description.trim() || fields.description.length > 1024) errors.push(`${name}: description must be 1-1024 characters`);
+    const body = contents.slice(match[0].length);
+    if (!body.trim()) errors.push(`${name}: instruction body is empty`);
+    if (body.split(/\r?\n/).length - (body.endsWith("\n") ? 1 : 0) > 500) errors.push(`${name}: instruction body exceeds 500 lines`);
     if (typeof fields.name === "string") {
       if (declared.has(fields.name)) errors.push(`${name}: duplicate skill name ${fields.name}`);
       declared.add(fields.name);
     }
-    for (const link of contents.matchAll(/\]\(([^)#]+)(?:#[^)]*)?\)/g)) {
+    for (const link of body.matchAll(/\]\(([^)#]+)(?:#[^)]*)?\)/g)) {
       const target = link[1]!;
       if (/^[a-z]+:/i.test(target) || target.startsWith("/")) continue;
       const resolved = path.resolve(directory, target);
       if (!resolved.startsWith(`${directory}${path.sep}`)) { errors.push(`${name}: linked file escapes skill directory: ${target}`); continue; }
-      try { await stat(resolved); } catch { errors.push(`${name}: missing linked file: ${target}`); }
+      try {
+        const actualDirectory = await realpath(directory);
+        const actual = await realpath(resolved);
+        if (!actual.startsWith(`${actualDirectory}${path.sep}`)) errors.push(`${name}: linked file escapes skill directory: ${target}`);
+      } catch { errors.push(`${name}: missing linked file: ${target}`); }
     }
   }
   return errors;

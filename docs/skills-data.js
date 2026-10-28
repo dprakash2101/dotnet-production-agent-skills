@@ -191,7 +191,7 @@ window.SKILLS_DATA = [
     categoryName: "Quality, Testing & Review",
     icon: "🎯",
     badge: "Testing",
-    description: "Add or improve focused automated tests targeting 90–100% meaningful coverage of new business logic.",
+    description: "Add focused behavioral tests using repository coverage expectations.",
     whenToUse: "Use for new or materially changed testable business logic and regression fixes; prefers parameterized tests.",
     tags: ["xunit", "nunit", "coverage", "parameterized-tests"],
     hasReferences: false,
@@ -435,5 +435,11 @@ window.SKILLS_DATA = [
     hasReferences: false,
     references: [],
     examplePrompt: "Stage only the modified UserService.cs and its unit test, check for whitespace errors, and prepare a concise commit."
-  }
+  },
+  {"id": "integration-testing-dotnet", "name": "integration-testing-dotnet", "category": "quality", "categoryName": "Quality, Testing & Review", "icon": "⚙️", "badge": "Production", "description": "Test HTTP and persistence boundaries with isolated, representative dependencies.", "whenToUse": "Test HTTP and persistence boundaries with isolated, representative dependencies.", "tags": ["dotnet", "production"], "hasReferences": false, "references": [], "examplePrompt": "Create integration tests for the order endpoint and its database."},
+  {"id": "http-client-integrations", "name": "http-client-integrations", "category": "implementation", "categoryName": "Implementation", "icon": "⚙️", "badge": "Production", "description": "Implement safe, bounded outbound HTTP integrations.", "whenToUse": "Implement safe, bounded outbound HTTP integrations.", "tags": ["dotnet", "production"], "hasReferences": false, "references": [], "examplePrompt": "Review this HttpClient integration for cancellation and unsafe retries."},
+  {"id": "observability-dotnet", "name": "observability-dotnet", "category": "implementation", "categoryName": "Implementation", "icon": "⚙️", "badge": "Production", "description": "Design traces, metrics and safe operational signals.", "whenToUse": "Design traces, metrics and safe operational signals.", "tags": ["dotnet", "production"], "hasReferences": false, "references": [], "examplePrompt": "Review trace propagation and metric cardinality for this service."},
+  {"id": "performance-diagnostics-dotnet", "name": "performance-diagnostics-dotnet", "category": "incident", "categoryName": "Incident Response & Git", "icon": "⚙️", "badge": "Production", "description": "Investigate measured performance issues with bounded diagnostics.", "whenToUse": "Investigate measured performance issues with bounded diagnostics.", "tags": ["dotnet", "production"], "hasReferences": false, "references": [], "examplePrompt": "Investigate thread-pool starvation using available diagnostics."},
+  {"id": "background-services-dotnet", "name": "background-services-dotnet", "category": "implementation", "categoryName": "Implementation", "icon": "⚙️", "badge": "Production", "description": "Design bounded, recoverable .NET background workers.", "whenToUse": "Design bounded, recoverable .NET background workers.", "tags": ["dotnet", "production"], "hasReferences": false, "references": [], "examplePrompt": "Review worker shutdown, dependency scopes and backpressure."},
+  {"id": "deployment-readiness-dotnet", "name": "deployment-readiness-dotnet", "category": "incident", "categoryName": "Incident Response & Git", "icon": "⚙️", "badge": "Production", "description": "Assess rollout, readiness, runtime compatibility and recovery.", "whenToUse": "Assess rollout, readiness, runtime compatibility and recovery.", "tags": ["dotnet", "production"], "hasReferences": false, "references": [], "examplePrompt": "Assess deployment readiness for this .NET service."}
 ];

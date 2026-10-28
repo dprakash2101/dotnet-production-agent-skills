@@ -18,3 +18,5 @@ Follow current project language version, nullable settings, analyzers, conventio
 For conditional runtime guidance, read only the relevant section of [references/runtime-safety.md](references/runtime-safety.md).
 
 Add meaningful tests for new or materially changed testable business logic. Validate once after a coherent change, escalating from focused tests/builds only as risk or evidence requires.
+
+Before completion, verify the requested observable behavior, inspect the final diff, run proportionate relevant checks, and report any validation not performed.

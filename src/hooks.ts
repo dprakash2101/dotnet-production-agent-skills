@@ -1,5 +1,6 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, rmdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { createHash } from "node:crypto";
 
 export type HookTarget = "codex" | "copilot" | "claude" | "cursor" | "antigravity";
 export type HookState = "missing" | "unchanged" | "modified";
@@ -8,6 +9,8 @@ const OWNER = "dotnet-production-agent-skills";
 const COMMAND = "node .agent-guardrails/guard.mjs";
 const SCRIPT_DIRECTORY = ".agent-guardrails";
 const SCRIPT_NAME = "guard.mjs";
+// Exact SHA-256 of the unmodified guard shipped before ownership markers.
+const LEGACY_GUARD_HASHES = new Set(["5286623026e5adcf9bfd0cac0265aed0fa91186cb8294986201441b7354f685b"]);
 
 interface JsonObject { [key: string]: unknown }
 
@@ -47,32 +50,55 @@ function managedGroup(target: HookTarget): JsonObject {
 }
 
 function containsManaged(value: unknown): boolean {
-  return JSON.stringify(value).includes(COMMAND);
+  return (JSON.stringify(value) ?? "").includes(COMMAND);
 }
 
 function withoutManaged(value: unknown): unknown[] {
-  return Array.isArray(value) ? value.filter((entry) => !containsManaged(entry)) : [];
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry: unknown) => {
+    if (!isObject(entry)) return [entry];
+    if (typeof entry.command === "string" && entry.command.startsWith(`${COMMAND} `)) return [];
+    if (!Array.isArray(entry.hooks)) return [entry];
+    const retained = entry.hooks.filter((item: unknown) => !(isObject(item) && typeof item.command === "string" && item.command.startsWith(`${COMMAND} `)));
+    return retained.length ? [{ ...entry, hooks: retained }] : containsManaged(entry) ? [] : [entry];
+  });
 }
 
 function mergeConfig(current: JsonObject, target: HookTarget, install: boolean): JsonObject {
   if (target === "copilot") {
-    return install ? {
-      version: 1,
-      description: `${OWNER} project command guardrails`,
-      hooks: { preToolUse: [{ type: "command", command: `${COMMAND} copilot`, timeoutSec: 10 }] },
-    } : {};
+    const next = { ...current };
+    const hooks = isObject(current.hooks) ? { ...current.hooks } : {};
+    const entries = install && Array.isArray(hooks.preToolUse) && containsManaged(hooks.preToolUse) ? [...hooks.preToolUse as unknown[]] : withoutManaged(hooks.preToolUse);
+    if (install && !containsManaged(entries)) entries.push({ type: "command", command: `${COMMAND} copilot`, timeoutSec: 10 });
+    if (entries.length) hooks.preToolUse = entries; else delete hooks.preToolUse;
+    if (install) {
+      next.version = current.version ?? 1;
+      next.description = current.description ?? `${OWNER} project command guardrails`;
+    } else if (current.description === `${OWNER} project command guardrails`) {
+      delete next.description;
+      if (Object.keys(hooks).length === 0 && current.version === 1) delete next.version;
+    }
+    if (Object.keys(hooks).length) next.hooks = hooks; else delete next.hooks;
+    return next;
   }
   if (target === "antigravity") {
     const next = { ...current };
-    if (install) next[OWNER] = { enabled: true, PreToolUse: [managedGroup(target)] };
-    else delete next[OWNER];
+    const group = isObject(current[OWNER]) ? { ...current[OWNER] as JsonObject } : {};
+    const existing = group.PreToolUse;
+    if (install && !containsManaged(existing)) group.PreToolUse = [...(Array.isArray(existing) ? existing : []), managedGroup(target)];
+    if (!install) {
+      const retained = withoutManaged(existing);
+      if (retained.length) group.PreToolUse = retained; else delete group.PreToolUse;
+      if (group.enabled === true && Object.keys(group).length === 1) delete group.enabled;
+    }
+    if (Object.keys(group).length) next[OWNER] = group; else delete next[OWNER];
     return next;
   }
 
   const hooks = isObject(current.hooks) ? { ...current.hooks } : {};
   const event = target === "cursor" ? "preToolUse" : "PreToolUse";
-  const entries = withoutManaged(hooks[event]);
-  if (install) entries.push(target === "cursor"
+  const entries = install && Array.isArray(hooks[event]) && containsManaged(hooks[event]) ? [...hooks[event] as unknown[]] : withoutManaged(hooks[event]);
+  if (install && !containsManaged(entries)) entries.push(target === "cursor"
     ? { command: `${COMMAND} cursor`, timeout: 10, matcher: "Shell|Read|Write", failClosed: true }
     : managedGroup(target));
   if (entries.length) hooks[event] = entries;
@@ -106,8 +132,22 @@ export async function changeHooks(projectRoot: string, packageRoot: string, targ
   const current = await readJson(files.config);
   const next = mergeConfig(current, target, action === "install");
   const hasConfigChange = JSON.stringify(current) !== JSON.stringify(next);
-  let scriptMatches = false;
-  try { scriptMatches = await readFile(files.script, "utf8") === await expectedScript(packageRoot); } catch { /* missing */ }
+  let script: string | null = null;
+  try { script = await readFile(files.script, "utf8"); } catch (error) {
+    if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
+  }
+  const canonical = await expectedScript(packageRoot);
+  const scriptMatches = script === canonical;
+  const marker = `${files.script}.sha256`;
+  const hash = (value: string) => createHash("sha256").update(value).digest("hex");
+  let recorded = "";
+  try { recorded = (await readFile(marker, "utf8")).trim(); } catch (error) {
+    if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
+  }
+  const legacyMatch = script !== null && !recorded && LEGACY_GUARD_HASHES.has(hash(script));
+  if (action === "install" && script !== null && !scriptMatches && hash(script) !== recorded && !legacyMatch) {
+    throw new Error(`Modified or unmanaged guard script preserved: ${files.script}`);
+  }
   if (action === "install") {
     if (!hasConfigChange && scriptMatches) return "skip";
     if (!dryRun) {
@@ -115,6 +155,7 @@ export async function changeHooks(projectRoot: string, packageRoot: string, targ
       await mkdir(path.dirname(files.script), { recursive: true });
       await writeFile(files.config, `${JSON.stringify(next, null, 2)}\n`, "utf8");
       await cp(path.join(packageRoot, "hooks", SCRIPT_NAME), files.script);
+      await writeFile(marker, `${hash(canonical)}\n`, "utf8");
     }
     return Object.keys(current).length ? "update" : "install";
   }
@@ -132,5 +173,22 @@ export function hookTargets(target: string): HookTarget[] {
 }
 
 export async function removeSharedHookScript(projectRoot: string, dryRun: boolean): Promise<void> {
-  if (!dryRun) await rm(path.join(projectRoot, SCRIPT_DIRECTORY), { recursive: true, force: true });
+  if (dryRun) return;
+  for (const target of hookTargets("all")) {
+    const config = await readJson(locations(projectRoot, target).config);
+    if (containsManaged(config)) return;
+  }
+  const script = locations(projectRoot, "codex").script;
+  const marker = `${script}.sha256`;
+  try {
+    const [content, recorded] = await Promise.all([readFile(script, "utf8"), readFile(marker, "utf8")]);
+    if (createHash("sha256").update(content).digest("hex") !== recorded.trim()) return;
+    await rm(script);
+    await rm(marker);
+    try { await rmdir(path.dirname(script)); } catch (error) {
+      if (!(error instanceof Error && "code" in error && (error.code === "ENOTEMPTY" || error.code === "ENOENT"))) throw error;
+    }
+  } catch (error) {
+    if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
+  }
 }

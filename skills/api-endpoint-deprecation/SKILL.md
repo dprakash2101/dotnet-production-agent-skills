@@ -25,3 +25,5 @@ Before proposed removal:
 No code reference is not proof that no customer calls the endpoint. Do not remove the route, DTOs, handlers, tests, or documentation without explicit user direction to perform removal. A request to add or document a replacement alone is insufficient.
 
 During removal, preserve unrelated versions/routes, update contract tests and generated artifacts through established workflows, and verify the retired route behavior intentionally. Record approval and evidence in the repository's normal change process rather than inventing a new governance system.
+
+Record replacement readiness, observed consumer usage, accountable decision owner, agreed migration window and intended retired-route behavior in the existing change process.
