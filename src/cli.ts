@@ -20,7 +20,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline/promises";
 import { changeInstructions, inspectInstructions } from "./copilot/instructions.js";
-import { changeHooks, hookTargets, inspectHooks, removeSharedHookScript, type HookState } from "./hooks.js";
+import { changeHooks, configureClaudeAttribution, hookTargets, inspectClaudeAttribution, inspectHooks, removeSharedHookScript, type HookState } from "./hooks.js";
 import { validateSkills } from "./skills/validation.js";
 import { installGitHook } from "./git-hook.js";
 
@@ -286,6 +286,9 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
   const skills = await packagedSkills();
   const validationErrors = await validateCanonical();
   if (validationErrors.length) throw new Error(`invalid packaged skills: ${validationErrors.join("; ")}`);
+  if (options.scope === "user" && (options.target === "claude" || options.target === "all")) {
+    await configureClaudeAttribution(homedir(), true);
+  }
   if ((options.target === "copilot" || options.target === "all") && options.scope === "project") {
     const instructions = await inspectInstructions(options.project);
     if (instructions.state === "malformed") throw new Error(`malformed managed Copilot instructions: ${instructions.path}`);
@@ -394,6 +397,10 @@ async function installOrUpdate(options: Options, command: "install" | "update"):
       console.log(`${action === "skip" ? "skip" : options.dryRun ? `would ${action}` : action} ${target} project hooks`);
     }
   }
+  if (options.scope === "user" && (options.target === "claude" || options.target === "all")) {
+    const action = await configureClaudeAttribution(homedir(), options.dryRun);
+    console.log(`${action === "skip" ? "skip" : options.dryRun ? `would ${action}` : action} Claude attribution settings`);
+  }
 }
 
 async function uninstall(options: Options): Promise<void> {
@@ -466,6 +473,7 @@ async function inspect(options: Options): Promise<{
   currentPackageVersion: string;
   installations: (Destination & { packageVersion: string | null; packageVersionMismatch: boolean; skills: { name: string; state: InspectionState; mode: InstallMode | null; packaged: "current" | "outdated" | null }[] })[];
   copilotInstructions?: Awaited<ReturnType<typeof inspectInstructions>>;
+  claudeAttribution?: Awaited<ReturnType<typeof inspectClaudeAttribution>>;
   hooks?: { target: string; state: HookState; config: string; script: string }[];
 }> {
   const skills = await packagedSkills();
@@ -493,7 +501,10 @@ async function inspect(options: Options): Promise<{
   const hooks = options.scope === "project"
     ? await Promise.all(hookTargets(options.target).map((target) => inspectHooks(options.project, PACKAGE_ROOT, target)))
     : undefined;
+  const claudeAttribution = options.target === "claude" || options.target === "all"
+    ? await inspectClaudeAttribution(options.scope === "user" ? homedir() : options.project) : undefined;
   return { packagedSkills: skills, currentPackageVersion: packageJson.version, installations,
+    ...(claudeAttribution ? { claudeAttribution } : {}),
     ...(copilotInstructions ? { copilotInstructions } : {}), ...(hooks ? { hooks } : {}) };
 }
 
@@ -534,7 +545,8 @@ async function main(): Promise<void> {
         .filter((entry) => entry.state !== "unchanged" || entry.packaged === "outdated");
       const instructionsUnhealthy = report.copilotInstructions && !["unchanged", "unmanaged"].includes(report.copilotInstructions.state);
       const hooksUnhealthy = report.hooks?.some((hook) => hook.state !== "unchanged") ?? false;
-      const output = { ...report, validationErrors, healthy: validationErrors.length === 0 && unhealthy.length === 0 && !instructionsUnhealthy && !hooksUnhealthy };
+      const attributionUnhealthy = report.claudeAttribution && report.claudeAttribution.state !== "unchanged";
+      const output = { ...report, validationErrors, healthy: validationErrors.length === 0 && unhealthy.length === 0 && !instructionsUnhealthy && !hooksUnhealthy && !attributionUnhealthy };
       if (parsed.options.json) console.log(JSON.stringify(output, null, 2));
       else {
         console.log(`Packaged skills (${report.packagedSkills.length}): ${report.packagedSkills.join(", ")}`);
@@ -547,6 +559,7 @@ async function main(): Promise<void> {
           if (outdated.length) console.log(`  packaged updates: ${outdated.map((skill) => skill.name).join(", ")}`);
         }
         if (report.copilotInstructions) console.log(`Copilot instructions: ${report.copilotInstructions.state} ${report.copilotInstructions.path}`);
+        if (report.claudeAttribution) console.log(`Claude attribution: ${report.claudeAttribution.state} ${report.claudeAttribution.path}`);
         report.hooks?.forEach((hook) => console.log(`${hook.target} hooks: ${hook.state} ${hook.config}`));
         validationErrors.forEach((error) => console.error(`error: ${error}`));
       }

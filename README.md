@@ -306,6 +306,19 @@ The separate Git `commit-msg` hook is opt-in. Local Git hooks can be bypassed an
 
 ### Reject co-author trailers with Git
 
+Claude Code installations (`--target claude` or `--target all`) now disable the host's built-in commit, PR, and session-link attribution in `.claude/settings.json` for project scope or `~/.claude/settings.json` for user scope. Both `install` and `update` set `attribution.commit` and `attribution.pr` to empty strings, `attribution.sessionUrl` to `false`, and the legacy `includeCoAuthoredBy` to `false`, preserving unrelated settings. `doctor` reports attribution settings that need repair. These preferences remain disabled after uninstall; restore them manually if desired. See [Claude Code attribution settings](https://code.claude.com/docs/en/settings-reference#attribution).
+
+For an existing installation, run the following from this checkout to apply the fix immediately (the repository change must be published before an npm version includes it):
+
+```bash
+npm ci
+npm run build
+node dist/src/cli.js update --target claude
+node dist/src/cli.js update --target claude --scope project
+```
+
+Project command guards also reject common `git commit` and `gh pr create/edit` commands containing co-author tags, including inline messages, trailers, and heredocs. They return corrective feedback to the agent. File-based messages and shell indirection still require the final-message Git hook below. Restart Claude Code after updating; higher-precedence local or managed settings can override the installed preferences.
+
 The optional Git `commit-msg` hook rejects commits containing a `Co-authored-by:` line, regardless of which agent or developer runs Git. It checks the final message, including messages supplied through `-m`, `-F`, templates, and `--trailer`. The comparison is case-insensitive and blocks human co-author trailers too. A rejected commit is not created, and the hook does not rewrite its message.
 
 #### 1. Install once per repository

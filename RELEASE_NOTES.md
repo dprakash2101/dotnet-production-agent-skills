@@ -1,5 +1,12 @@
 # Release notes
 
+## v0.4.1 — Claude attribution fix
+
+- Disable Claude Code's built-in commit trailers, PR credits, and session links during user and project installs/updates, with legacy `includeCoAuthoredBy: false` compatibility. Preserve unrelated settings and retain the disabled-attribution preference on uninstall.
+- Report missing or re-enabled attribution preferences in `doctor` and repair them with `update`.
+- Reject common commit/PR commands containing co-author tags at the project tool hook, returning corrective feedback. Keep the optional Git `commit-msg` hook for validation of final file/template-based messages.
+- Cover both installation scopes, dry-run, upgrades, idempotency, settings preservation, doctor regressions, and multiline command attribution in regression tests.
+
 ## v0.4.0 — Safer hook management and expanded .NET skills
 
 Prepared for release with [PR #15](https://github.com/dprakash2101/dotnet-production-agent-skills/pull/15); not yet published to npm.
