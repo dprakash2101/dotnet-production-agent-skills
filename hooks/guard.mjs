@@ -23,6 +23,7 @@ const file = String(args.file_path ?? args.path ?? args.TargetFile ?? args.Absol
 // These checks are best-effort protection, not a shell sandbox. Account for
 // common option order, quoting and Git global options without executing input.
 const checks = [
+  [/\b(?:git\s+(?:(?:-C|--git-dir|--work-tree|-c)\s+(?:"[^"]*"|'[^']*'|\S+)\s+)*commit\b|gh\s+pr\s+(?:create|edit)\b)[\s\S]*co-authored-by\s*:/i, "Co-authored-by attribution is forbidden. Remove the co-author trailer and retry; do not bypass hooks."],
   [/\bgit\s+(?:(?:-C|--git-dir|--work-tree|-c)\s+(?:"[^"]*"|'[^']*'|\S+)\s+)*(?:push)\b[^\n;&|]*(?:--force(?:-with-lease)?|-f)\b/i, "Force-push is blocked. Use a normal push or request explicit human approval."],
   [/\bgit\s+(?:(?:-C|--git-dir|--work-tree|-c)\s+(?:"[^"]*"|'[^']*'|\S+)\s+)*(?:reset\b[^\n;&|]*--hard\b|clean\s+-[^\s]*f[^\s]*|branch\s+-D(?:\s|$))/i, "Destructive Git operations are blocked. Preserve work and request explicit human approval."],
   [/(?:^|[;&|]\s*)rm\s+-(?=[a-z]*r)(?=[a-z]*f)[a-z]+\s+["']?(?:\/|~|\$HOME)(?:["']?)(?:\s|$)/i, "Recursive deletion of a broad system or home path is blocked."],

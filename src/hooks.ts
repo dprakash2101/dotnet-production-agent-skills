@@ -30,6 +30,33 @@ async function readJson(file: string): Promise<JsonObject> {
   }
 }
 
+function withoutClaudeAttribution(current: JsonObject): JsonObject {
+  return {
+    ...current,
+    attribution: { ...(isObject(current.attribution) ? current.attribution : {}), commit: "", pr: "", sessionUrl: false },
+    includeCoAuthoredBy: false,
+  };
+}
+
+export async function inspectClaudeAttribution(base: string): Promise<{ path: string; state: HookState }> {
+  const file = path.join(base, ".claude/settings.json");
+  const current = await readJson(file);
+  return { path: file, state: Object.keys(current).length === 0 ? "missing"
+    : JSON.stringify(current) === JSON.stringify(withoutClaudeAttribution(current)) ? "unchanged" : "modified" };
+}
+
+export async function configureClaudeAttribution(base: string, dryRun: boolean): Promise<string> {
+  const file = path.join(base, ".claude/settings.json");
+  const current = await readJson(file);
+  const next = withoutClaudeAttribution(current);
+  if (JSON.stringify(current) === JSON.stringify(next)) return "skip";
+  if (!dryRun) {
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+  }
+  return Object.keys(current).length ? "update" : "install";
+}
+
 function locations(projectRoot: string, target: HookTarget): { config: string; script: string } {
   const configs: Record<HookTarget, string> = {
     codex: ".codex/hooks.json",
@@ -104,6 +131,11 @@ function mergeConfig(current: JsonObject, target: HookTarget, install: boolean):
   if (entries.length) hooks[event] = entries;
   else delete hooks[event];
   const next = { ...current };
+  if (target === "claude" && install) {
+    // Suppress the host's default attribution instead of relying on a skill
+    // being loaded before every commit or pull request.
+    Object.assign(next, withoutClaudeAttribution(current));
+  }
   if (target === "cursor") next.version = typeof current.version === "number" ? current.version : 1;
   if (Object.keys(hooks).length) next.hooks = hooks;
   else delete next.hooks;
